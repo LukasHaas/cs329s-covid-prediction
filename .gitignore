@@ -1,2 +1,3 @@
 venv/
 *.wav
+*.DS_Store
