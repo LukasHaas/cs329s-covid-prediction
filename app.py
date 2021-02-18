@@ -48,7 +48,7 @@ def record_cough(progress, status, sr, duration=5, channels=1):
 
   # Wait in case there is a mismatch between progress and actual recording
   sd.wait()
-  status.info('Cough recorded.')
+  status.success('Cough recorded.')
   progress.empty()
 
   # Convert to wav bytes object
@@ -105,15 +105,15 @@ def hide_menu():
 def main():
   setup_page()
 
-  st.image(COVID_IMAGE_PATH, width=120)
+  st.image(COVID_IMAGE_PATH, width=80)
   st.title('Covid-19 Risk Evaluation')
   st.write('This app evaluates your risk for Covid-19 based on coughs recorded from your device.')
 
   default_samplerate, sample_string = assess_device_samplerate()
-  st.info(f'A reasonable recording quality is important to get the most accurate results.\n\n{sample_string}')
+  st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
  
   st.subheader('Record a 5 Second Cough Sample')
-  st.write('Please make sure there is no background noise.')
+  st.write('Please minimize any background noise.')
 
   if st.button('Start Recording'):
     status_placeholder = st.empty()
