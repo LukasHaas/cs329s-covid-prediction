@@ -33,9 +33,9 @@ import soundfile as sf
 
 COVID_IMAGE_PATH = './assets/covid.png'
 
-def record_cough(progress, status, sr, duration=5, channels=1, filename='cough_temp.wav'):
+def record_cough(progress, status, sr, duration=5, channels=1):
   """
-  Records cough sound and returns a wav byte file.
+  Records cough sound and returns a wav byte array.
   """
   recording = sd.rec(int(duration * sr), channels=channels).reshape(-1)
 
@@ -83,10 +83,16 @@ def assess_device_samplerate():
   return default_samplerate, sample_string
 
 def setup_page():
+  """
+  Applies site-wide settings.
+  """
   st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_PATH, layout='centered')
   hide_menu()
 
 def hide_menu():
+  """
+  Hides streamlit menu by injecting HTML & CSS.
+  """
   hide_streamlit_style = """
   <style>
   #MainMenu {visibility: hidden;}

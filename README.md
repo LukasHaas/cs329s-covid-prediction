@@ -23,4 +23,4 @@ streamlit run app.py
 ```
 This will run the application on your local machine.
 
-Once you have recorded cough sounds, the most recent one will be saved under `cough_temp.wav` in your project directory.
+Cough sounds will not be saved to any device but are processed using GCP APIs.
