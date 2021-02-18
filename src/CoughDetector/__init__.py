@@ -1,0 +1,1 @@
+from .CoughDetector import CoughDetector

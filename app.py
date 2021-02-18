@@ -4,38 +4,57 @@
 #
 
 import io
+import os
 import time
-
+import json
+import requests
+import numpy as np
 import streamlit as st
+
+# App modules
 import src.SessionState as SessionState
+import src.Utils as Utils
+from src.CoughDetector import CoughDetector
 
+# Audio recording + processing
 from scipy.io.wavfile import read, write
-
-# Data manipulation
-#import numpy as np
-#import matplotlib.pyplot as plt
-
-# Feature extraction
-#import scipy
-#import librosa
-#import python_speech_features as mfcc
-#import os
-#from scipy.io.wavfile import read
-
-# Model training
-#from sklearn import preprocessing
-#from sklearn.mixture import GaussianMixture as GMM
-#import pickle
-
-# Live recording
 import sounddevice as sd
 import soundfile as sf
 
+# Initialization
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'cs329s-covid-caugh-prediction-63c10ece8027.json'
 COVID_IMAGE_PATH = './assets/covid.png'
+PROJECT = 'cs329s-covid-caugh-prediction'
+REGION = 'us-central1'
+
+COUGH_DETECTOR = CoughDetector()
+
+@st.cache(show_spinner=False)
+def detect_cough(recording, sr):
+  """
+  Predicts whether a cough is present in the recording using model stored in app.
+
+  Args:
+    recording (np.array): user recording.
+    sr (int): sample rate
+  Returns:
+    pred_conf (float): predicted confidence of cough existence.
+  """
+  pred_conf = COUGH_DETECTOR.classify_cough(recording, sr)
+  return pred_conf
 
 def record_cough(progress, status, sr, duration=5, channels=1):
   """
   Records cough sound and returns a wav byte array.
+
+  Args:
+    progress (st.empty): streamlit placeholder for progress bar
+    status (st.empty): streamlit placeholder for status bar
+    sr (int): sample rate
+    duration (int): duration of recording, default 5 seconds
+    channels (int): recording channels, default mono
+  Returns:
+    recording (np.array): user recording
   """
   recording = sd.rec(int(duration * sr), channels=channels).reshape(-1)
 
@@ -48,27 +67,43 @@ def record_cough(progress, status, sr, duration=5, channels=1):
 
   # Wait in case there is a mismatch between progress and actual recording
   sd.wait()
-  status.success('Cough recorded.')
   progress.empty()
+  return recording
 
+def review_recording(recording, sr, cough_conf, status):
+  """
+  Loads the recorded cough sound and allows user to review.
+
+  Args:
+    recording (np.array): user recording
+    sr (int): sample rate
+    cough_conf (float): cough detection model confidence
+    status (st.empty): streamlit placeholder
+  """
   # Convert to wav bytes object
   bytes_wav = bytes()
   byte_recording = io.BytesIO(bytes_wav)
   write(byte_recording, sr, recording)
 
-  #sf.write(filename, data=recording, samplerate=sr)
-  return byte_recording
-
-def review_recording(recording):
-  """
-  Loads the recorded cough sound and allows user to review.
-  """
   st.write('Review your recording:')
-  st.audio(recording, format='audio/wav')
+
+  # Check if cough was detected
+  if cough_conf < 0.20:
+    status.error('We did not detect a cough in your recording. Please try again.')
+  elif cough_conf < 0.55:
+    status.warning('If possible, please cough more forcefully. Otherwise, proceed.')
+  else:
+    status.success('Cough sucessfully recorded.')
+
+  st.audio(byte_recording, format='audio/wav')
 
 def assess_device_samplerate():
   """
   Returns the device's default sampling rate and a string stating the sampling quality.
+
+  Returns:
+    default_samplerate (int): device's default samplerate
+    sample_string (str): string indicating microphone quality
   """
   default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
   sample_string = 'Your device\'s microphone quality: '
@@ -121,7 +156,9 @@ def main():
 
     recording_bar.progress(0)
     recording = record_cough(recording_bar, status_placeholder, default_samplerate)
-    review_recording(recording)
+
+    cough_conf = detect_cough(recording, default_samplerate)
+    review_recording(recording, default_samplerate, cough_conf, status_placeholder)
 
 
 if __name__ == '__main__':
