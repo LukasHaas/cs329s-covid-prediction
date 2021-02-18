@@ -3,8 +3,13 @@
 # L. Haas, D. Soylu, J. Spencer
 #
 
+import io
+import time
+
 import streamlit as st
 import src.SessionState as SessionState
+
+from scipy.io.wavfile import read, write
 
 # Data manipulation
 #import numpy as np
@@ -26,24 +31,44 @@ import src.SessionState as SessionState
 import sounddevice as sd
 import soundfile as sf
 
-def record_and_save(sr, duration=5, channels=1, filename='cough_temp.wav'):
+COVID_IMAGE_PATH = './assets/covid.png'
+
+def record_cough(progress, status, sr, duration=5, channels=1, filename='cough_temp.wav'):
   """
-  Records cough sounds and saves them to file
+  Records cough sound and returns a wav byte file.
   """
   recording = sd.rec(int(duration * sr), channels=channels).reshape(-1)
-  sd.wait()
-  sf.write(filename, data=recording, samplerate=sr)
-  return recording
 
-def review_recording():
+  # Show progress bar
+  status.warning('Recording... 0.0/5.0s')
+  for percent_complete in range(100):
+    time.sleep(0.05)
+    status.warning(f'Recording... {(percent_complete / 100 * 5):.1f}/5.0s')
+    progress.progress(percent_complete + 1)
+
+  # Wait in case there is a mismatch between progress and actual recording
+  sd.wait()
+  status.info('Cough recorded.')
+  progress.empty()
+
+  # Convert to wav bytes object
+  bytes_wav = bytes()
+  byte_recording = io.BytesIO(bytes_wav)
+  write(byte_recording, sr, recording)
+
+  #sf.write(filename, data=recording, samplerate=sr)
+  return byte_recording
+
+def review_recording(recording):
+  """
+  Loads the recorded cough sound and allows user to review.
+  """
   st.write('Review your recording:')
-  audio_file = open('cough_temp.wav', 'rb')
-  audio_bytes = audio_file.read()
-  st.audio(audio_bytes, format='audio/wav')
+  st.audio(recording, format='audio/wav')
 
 def assess_device_samplerate():
   """
-  Returns the device's default sampling rate and a string stating the quality.
+  Returns the device's default sampling rate and a string stating the sampling quality.
   """
   default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
   sample_string = 'Your device\'s microphone quality: '
@@ -57,6 +82,10 @@ def assess_device_samplerate():
 
   return default_samplerate, sample_string
 
+def setup_page():
+  st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_PATH, layout='centered')
+  hide_menu()
+
 def hide_menu():
   hide_streamlit_style = """
   <style>
@@ -68,23 +97,25 @@ def hide_menu():
   st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 def main():
+  setup_page()
 
-  #hide_menu()
-
+  st.image(COVID_IMAGE_PATH, width=120)
   st.title('Covid-19 Risk Evaluation')
   st.write('This app evaluates your risk for Covid-19 based on coughs recorded from your device.')
 
   default_samplerate, sample_string = assess_device_samplerate()
   st.info(f'A reasonable recording quality is important to get the most accurate results.\n\n{sample_string}')
  
-  st.subheader('Record a 5 second cough sample:')
+  st.subheader('Record a 5 Second Cough Sample')
   st.write('Please make sure there is no background noise.')
 
   if st.button('Start Recording'):
-    with st.spinner("Recording..."):
-      recording = record_and_save(default_samplerate)
-      st.info('Cough saved.')
-      review_recording()
+    status_placeholder = st.empty()
+    recording_bar = st.empty()
+
+    recording_bar.progress(0)
+    recording = record_cough(recording_bar, status_placeholder, default_samplerate)
+    review_recording(recording)
 
 
 if __name__ == '__main__':
