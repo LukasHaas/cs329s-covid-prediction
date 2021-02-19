@@ -1,3 +1,4 @@
+import sounddevice as sd
 import googleapiclient.discovery
 from google.api_core.client_options import ClientOptions
 
@@ -37,3 +38,23 @@ def predict_json(project, region, model, instances, version=None):
         raise RuntimeError(response['error'])
 
     return response['predictions']
+
+def assess_device_samplerate():
+  """
+  Returns the device's default sampling rate and a string stating the sampling quality.
+
+  Returns:
+    default_samplerate (int): device's default samplerate
+    sample_string (str): string indicating microphone quality
+  """
+  default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
+  sample_string = 'Your device\'s microphone quality: '
+
+  if default_samplerate <= 16000:
+    sample_string += ':pensive:'
+  elif default_samplerate <= 22100:
+    sample_string += ':neutral_face:'
+  else:
+    sample_string += ':grinning:'
+
+  return default_samplerate, sample_string

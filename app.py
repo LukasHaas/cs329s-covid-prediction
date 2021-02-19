@@ -97,26 +97,6 @@ def review_recording(recording, sr, cough_conf, status):
 
   st.audio(byte_recording, format='audio/wav')
 
-def assess_device_samplerate():
-  """
-  Returns the device's default sampling rate and a string stating the sampling quality.
-
-  Returns:
-    default_samplerate (int): device's default samplerate
-    sample_string (str): string indicating microphone quality
-  """
-  default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
-  sample_string = 'Your device\'s microphone quality: '
-
-  if default_samplerate <= 16000:
-    sample_string += ':pensive:'
-  elif default_samplerate <= 22100:
-    sample_string += ':neutral_face:'
-  else:
-    sample_string += ':grinning:'
-
-  return default_samplerate, sample_string
-
 def setup_page():
   """
   Applies site-wide settings.
@@ -144,7 +124,7 @@ def main():
   st.title('Covid-19 Risk Evaluation')
   st.write('This app evaluates your risk for Covid-19 based on coughs recorded from your device.')
 
-  default_samplerate, sample_string = assess_device_samplerate()
+  default_samplerate, sample_string = Utils.assess_device_samplerate()
   st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
  
   st.subheader('Record a 5 Second Cough Sample')
