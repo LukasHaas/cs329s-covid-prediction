@@ -6,7 +6,8 @@ EXPOSE 8080
 
 # Upgrade pip 
 RUN pip install -U pip
-RUN apt-get install libportaudio2
+RUN apt-get update && apt-get install -y \
+    libportaudio2
 
 COPY requirements.txt app/requirements.txt
 RUN pip install -r app/requirements.txt
