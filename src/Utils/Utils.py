@@ -47,7 +47,12 @@ def assess_device_samplerate():
     default_samplerate (int): device's default samplerate
     sample_string (str): string indicating microphone quality
   """
-  default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
+  default_samplerate = None # default
+  try:
+    default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
+  except (IndexError):
+    default_samplerate = 44100
+
   sample_string = 'Your device\'s microphone quality: '
 
   if default_samplerate <= 16000:

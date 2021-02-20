@@ -1,5 +1,5 @@
 streamlit==0.76.0
-sounddevice==0.4.1
+#sounddevice==0.4.1
 SoundFile==0.10.3.post1
 scipy==1.5.4
 librosa==0.8.0

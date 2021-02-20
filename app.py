@@ -15,9 +15,10 @@ import streamlit as st
 import src.SessionState as SessionState
 import src.Utils as Utils
 from src.CoughDetector import CoughDetector
+from src.CustomComponents import CovidRecordButton
 
 # Audio recording + processing
-from scipy.io.wavfile import read, write
+from scipy.io import wavfile
 import sounddevice as sd
 import soundfile as sf
 
@@ -43,59 +44,25 @@ def detect_cough(recording, sr):
   pred_conf = COUGH_DETECTOR.classify_cough(recording, sr)
   return pred_conf
 
-def record_cough(progress, status, sr, duration=5, channels=1):
-  """
-  Records cough sound and returns a wav byte array.
-
-  Args:
-    progress (st.empty): streamlit placeholder for progress bar
-    status (st.empty): streamlit placeholder for status bar
-    sr (int): sample rate
-    duration (int): duration of recording, default 5 seconds
-    channels (int): recording channels, default mono
-  Returns:
-    recording (np.array): user recording
-  """
-  recording = sd.rec(int(duration * sr), channels=channels).reshape(-1)
-
-  # Show progress bar
-  status.warning('Recording... 0.0/5.0s')
-  for percent_complete in range(100):
-    time.sleep(0.05)
-    status.warning(f'Recording... {(percent_complete / 100 * 5):.1f}/5.0s')
-    progress.progress(percent_complete + 1)
-
-  # Wait in case there is a mismatch between progress and actual recording
-  sd.wait()
-  progress.empty()
-  return recording
-
-def review_recording(recording, sr, cough_conf, status):
+def review_recording(recording, cough_conf):
   """
   Loads the recorded cough sound and allows user to review.
 
   Args:
-    recording (np.array): user recording
-    sr (int): sample rate
+    recording (np.array): user recording as a WAV bytes array
     cough_conf (float): cough detection model confidence
-    status (st.empty): streamlit placeholder
   """
-  # Convert to wav bytes object
-  bytes_wav = bytes()
-  byte_recording = io.BytesIO(bytes_wav)
-  write(byte_recording, sr, recording)
-
   st.write('Review your recording:')
 
   # Check if cough was detected
   if cough_conf < 0.20:
-    status.error('We did not detect a cough in your recording. Please try again.')
+    st.error('We did not detect a cough in your recording. Please try again.')
   elif cough_conf < 0.55:
-    status.warning('If possible, please cough more forcefully. Otherwise, proceed.')
+    st.warning('If possible, please cough more forcefully. Otherwise, proceed.')
   else:
-    status.success('Cough sucessfully recorded.')
+    st.success('Cough sucessfully recorded.')
 
-  st.audio(byte_recording, format='audio/wav')
+  st.audio(recording, format='audio/wav')
 
 def setup_page():
   """
@@ -130,15 +97,12 @@ def main():
   st.subheader('Record a 5 Second Cough Sample')
   st.write('Please minimize any background noise.')
 
-  if st.button('Start Recording'):
-    status_placeholder = st.empty()
-    recording_bar = st.empty()
+  recording = CovidRecordButton(duration=5000)
 
-    recording_bar.progress(0)
-    recording = record_cough(recording_bar, status_placeholder, default_samplerate)
-
-    cough_conf = detect_cough(recording, default_samplerate)
-    review_recording(recording, default_samplerate, cough_conf, status_placeholder)
+  if recording:
+    rate, audio = wavfile.read(io.BytesIO(recording))
+    cough_conf = detect_cough(audio, rate)
+    review_recording(recording, cough_conf)
 
 
 if __name__ == '__main__':
