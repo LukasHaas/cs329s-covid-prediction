@@ -1,0 +1,4 @@
+venv/
+*.wav
+*.DS_Store
+*.json
