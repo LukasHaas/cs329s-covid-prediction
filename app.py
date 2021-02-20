@@ -23,8 +23,10 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'cs329s-covid-caugh-prediction-63c10ece8027.json'
-COVID_IMAGE_PATH = './assets/covid.png'
+
+COVID_IMAGE_PATH = os.path.join(__location__, 'assets', 'covid.png')
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 
@@ -102,13 +104,13 @@ def main():
   st.subheader('Record a 5 Second Cough Sample')
   st.write('Please minimize any background noise.')
 
+  # Custom Streamlit component using javascript to query client-side microphone devices
   recording = CovidRecordButton(duration=5000)
 
   if recording:
     rate, audio = wavfile.read(io.BytesIO(recording))
     cough_conf = detect_cough(audio, rate)
     review_recording(audio, rate, cough_conf)
-
 
 if __name__ == '__main__':
   main()
