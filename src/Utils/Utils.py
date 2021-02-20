@@ -1,6 +1,7 @@
 import sounddevice as sd
 import googleapiclient.discovery
 from google.api_core.client_options import ClientOptions
+from google.cloud import storage
 
 def predict_json(project, region, model, instances, version=None):
     """Send json data to a deployed model for prediction.
@@ -38,6 +39,20 @@ def predict_json(project, region, model, instances, version=None):
         raise RuntimeError(response['error'])
 
     return response['predictions']
+
+def upload_blob(bucket_name, source_object, destination_blob_name):
+    """Uploads a file to the bucket."""
+    # bucket_name = "your-bucket-name"
+    # source_file_name = "local/path/to/file"
+    # destination_blob_name = "storage-object-name"
+
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    blob.upload_from_string(source_object)
+
+    print("File uploaded to {}.".format(destination_blob_name))
 
 def assess_device_samplerate():
   """

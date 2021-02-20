@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends apt-utils \
     libportaudio2 \
     libsndfile1
 
-# Download audio dependencies using conda
+# Add a user
 RUN useradd -ms /bin/bash build
 
 # Switch to build user

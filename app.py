@@ -24,7 +24,7 @@ import soundfile as sf
 
 # Initialization
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'cs329s-covid-caugh-prediction-63c10ece8027.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 COVID_IMAGE_PATH = os.path.join(__location__, 'assets', 'covid.png')
 PROJECT = 'cs329s-covid-caugh-prediction'
@@ -46,18 +46,14 @@ def detect_cough(recording, sr):
   pred_conf = COUGH_DETECTOR.classify_cough(recording, sr)
   return pred_conf
 
-def review_recording(recording, sr, cough_conf):
+def review_recording(recording_url, cough_conf):
   """
   Loads the recorded cough sound and allows user to review.
 
   Args:
-    recording (np.array): user recording as a WAV bytes array
+    recording_url (str): url to audio blob file
     cough_conf (float): cough detection model confidence
   """
-  # Read audio data
-  bytes_wav = bytes()
-  byte_io = io.BytesIO(bytes_wav)
-  wavfile.write(byte_io, sr, recording)
 
   st.write('Review your recording:')
 
@@ -69,7 +65,8 @@ def review_recording(recording, sr, cough_conf):
   else:
     st.success('Cough sucessfully recorded.')
 
-  st.audio(byte_io, format='audio/wav')
+  # Display audio
+  inject_audio(recording_url)
 
 def setup_page():
   """
@@ -87,9 +84,18 @@ def hide_menu():
   #MainMenu {visibility: hidden;}
   footer {visibility: hidden;}
   </style>
-
   """
   st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+def inject_audio(blob_url):
+    """
+    Adds audio in form of a blob.
+
+    Args:
+      blob_url (str): blob URL
+    """
+    audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
+    st.markdown(audio_display, unsafe_allow_html=True)
 
 def main():
   setup_page()
@@ -107,10 +113,13 @@ def main():
   # Custom Streamlit component using javascript to query client-side microphone devices
   recording = CovidRecordButton(duration=5000)
 
-  if recording:
-    rate, audio = wavfile.read(io.BytesIO(recording))
+  if recording and recording is not None:
+    rec = json.loads(recording)
+    #Utils.upload_blob('cs329s-covid-user-coughs', recording, 'temp_data/user_cough.wav')
+    rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
     cough_conf = detect_cough(audio, rate)
-    review_recording(audio, rate, cough_conf)
+    review_recording(rec['url'], cough_conf)
+
 
 if __name__ == '__main__':
   main()

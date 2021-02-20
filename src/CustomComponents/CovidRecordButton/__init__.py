@@ -93,7 +93,6 @@ def CovidRecordButton(duration=5000.0, key=None):
     # There's no need to do this in our simple example - but it's an option.
     return recording
 
-
 # Add some test code to play with the component while it's in development.
 # During development, we can run this just as we would any other Streamlit
 # app: `$ streamlit run my_component/__init__.py`
@@ -106,6 +105,6 @@ if not _RELEASE:
     # print its output value.
     recording_data = CovidRecordButton(duration=5000)
     if recording_data:
-        st.audio(recording_data, format='audio/wav')
+        st.write(recording_data['url'])
 
     st.markdown("---")

@@ -6,6 +6,7 @@ window.MediaRecorder = AudioRecorder
 // to index.html.)
 const span = document.body.appendChild(document.createElement("span"))
 const button = span.appendChild(document.createElement("button"))
+
 button.classList.add("covid-button");
 button.textContent = "Start Recording"
 
@@ -22,13 +23,13 @@ button.onclick = function() {
 
     // Set record to <audio> when recording will be finished
     recorder.addEventListener('dataavailable', e => {
-      console.log(e.data)
-      
       var arrayBuffer;
       var reader = new FileReader();
       reader.onload = function(event) {
-        arrayBuffer = event.target.result;
-        Streamlit.setComponentValue(Object(arrayBuffer))
+        arrayBuffer = new Uint8Array(event.target.result);
+        arrayBuffer = Array.from(arrayBuffer);
+        let blobURL = URL.createObjectURL(e.data)
+        Streamlit.setComponentValue(JSON.stringify({"data": arrayBuffer, "url": blobURL})) //     Object({'url': blobURL, 'data': }))
       };
       reader.readAsArrayBuffer(e.data);
     })
