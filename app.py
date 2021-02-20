@@ -10,6 +10,7 @@ import json
 import requests
 import numpy as np
 import streamlit as st
+from PIL import Image
 
 # App modules
 import src.SessionState as SessionState
@@ -26,7 +27,7 @@ import soundfile as sf
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
-COVID_IMAGE_PATH = os.path.join(__location__, 'assets', 'covid.png')
+COVID_IMAGE = Image.open(os.path.join(__location__, 'assets', 'covid.png'))
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 
@@ -72,7 +73,7 @@ def setup_page():
   """
   Applies site-wide settings.
   """
-  st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_PATH, layout='centered')
+  st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE, layout='centered')
   hide_menu()
 
 def hide_menu():
@@ -97,15 +98,38 @@ def inject_audio(blob_url):
     audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
     st.markdown(audio_display, unsafe_allow_html=True)
 
+def information_section():
+  """
+  Render an information section
+  """
+  st.subheader('Information')
+  st.write('We encourage you to read through the following information sections:')
+
+  with st.beta_expander("Data Privacy Policy"):
+    st.write("""
+    Your cough recording will exclusively be used in order to serve you
+    a Covid-19 risk evaluation. Under no circumstances will we share
+    your data with any third parties. In addition, your Covid-19 risk
+    evaluation will be generated entirely anonymously.
+    """)
+
+  with st.beta_expander("Algorithm Details"):
+    st.write("""
+    Some data about the model used, training data, accuracy,
+    and how results should be interpreted.
+    """)
+
+
 def main():
   setup_page()
 
-  st.image(COVID_IMAGE_PATH, width=80)
+  st.image(COVID_IMAGE, width=50)
   st.title('Covid-19 Risk Evaluation')
+  
   st.write('This app evaluates your risk for Covid-19 based on coughs recorded from your device.')
 
-  default_samplerate, sample_string = Utils.assess_device_samplerate()
-  st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
+  #default_samplerate, sample_string = Utils.assess_device_samplerate()
+  #st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
  
   st.subheader('Record a 5 Second Cough Sample')
   st.write('Please minimize any background noise.')
@@ -119,6 +143,8 @@ def main():
     rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
     cough_conf = detect_cough(audio, rate)
     review_recording(rec['url'], cough_conf)
+
+  information_section()
 
 
 if __name__ == '__main__':
