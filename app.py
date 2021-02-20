@@ -44,7 +44,7 @@ def detect_cough(recording, sr):
   pred_conf = COUGH_DETECTOR.classify_cough(recording, sr)
   return pred_conf
 
-def review_recording(recording, cough_conf):
+def review_recording(recording, sr, cough_conf):
   """
   Loads the recorded cough sound and allows user to review.
 
@@ -52,6 +52,11 @@ def review_recording(recording, cough_conf):
     recording (np.array): user recording as a WAV bytes array
     cough_conf (float): cough detection model confidence
   """
+  # Read audio data
+  bytes_wav = bytes()
+  byte_io = io.BytesIO(bytes_wav)
+  wavfile.write(byte_io, sr, recording)
+
   st.write('Review your recording:')
 
   # Check if cough was detected
@@ -62,7 +67,7 @@ def review_recording(recording, cough_conf):
   else:
     st.success('Cough sucessfully recorded.')
 
-  st.audio(recording, format='audio/wav')
+  st.audio(byte_io, format='audio/wav')
 
 def setup_page():
   """
@@ -102,7 +107,7 @@ def main():
   if recording:
     rate, audio = wavfile.read(io.BytesIO(recording))
     cough_conf = detect_cough(audio, rate)
-    review_recording(recording, cough_conf)
+    review_recording(audio, rate, cough_conf)
 
 
 if __name__ == '__main__':
