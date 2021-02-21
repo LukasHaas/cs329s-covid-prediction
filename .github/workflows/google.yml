@@ -1,7 +1,12 @@
-- name: Deploy to App Engine
-  id: deploy-app
-  uses: google-github-actions/deploy-appengine@v0.1.0
-  with:
-    project: ${{ secrets.gcp_project }}
-    deliverables: /app.yaml
-    credentials: ${{ secrets.gcp_credentials }}
+on: push
+jobs:
+  gcp_app_engine_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to App Engine
+        id: deploy-app
+        uses: google-github-actions/deploy-appengine@v0.1.0
+        with:
+          project: ${{ secrets.gcp_project }}
+          deliverables: /app.yaml
+          credentials: ${{ secrets.gcp_credentials }}
