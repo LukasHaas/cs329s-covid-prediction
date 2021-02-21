@@ -1,4 +1,6 @@
-on: push
+on:
+  push:
+    branches: [ master ]
 jobs:
   gcp_app_engine_job:
     runs-on: ubuntu-latest
