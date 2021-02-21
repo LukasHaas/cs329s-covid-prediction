@@ -29,3 +29,9 @@ streamlit run app.py
 This will run the application on your local machine.
 
 Cough sounds will not be saved to any device but are processed using GCP APIs.
+
+## Deployment
+In order to deploy the application to Google Cloud's App Engine, run the following command from the root directory of the project:
+```shell
+make gcloud-deploy
+```
