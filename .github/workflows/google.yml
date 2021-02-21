@@ -12,6 +12,7 @@ jobs:
           version: '290.0.1'
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
+      - run: gcloud config set project ${{ secrets.GCP_PROJECT }}
       - name: Deploy to App Engine
         id: deploy-app
         run: make gcloud-deploy
