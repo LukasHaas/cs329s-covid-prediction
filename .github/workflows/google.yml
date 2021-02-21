@@ -5,6 +5,8 @@ jobs:
   gcp_app_engine_job:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v1
       - name: Deploy to App Engine
         id: deploy-app
         uses: google-github-actions/deploy-appengine@v0.1.0
