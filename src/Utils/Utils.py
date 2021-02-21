@@ -41,11 +41,17 @@ def predict_json(project, region, model, instances, version=None):
     return response['predictions']
 
 def upload_blob(bucket_name, source_object, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # bucket_name = "your-bucket-name"
-    # source_file_name = "local/path/to/file"
-    # destination_blob_name = "storage-object-name"
-
+    """
+    Uploads a file object to the bucket.
+    
+    Example Usage:
+    >>> Utils.upload_blob('cs329s-covid-user-coughs', recording, 'temp_data/user_cough.wav')
+    
+    Args:
+      bucket_name (str): GCP storage bucket
+      source_object (any): object to be saved to GCP Storage
+      destination_blob_name (str): path and filename to save object to
+    """
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)

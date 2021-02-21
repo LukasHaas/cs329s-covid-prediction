@@ -10,6 +10,7 @@ import json
 import requests
 import numpy as np
 import streamlit as st
+import streamlit.components.v1 as components
 from PIL import Image
 
 # App modules
@@ -24,10 +25,8 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
-
-COVID_IMAGE = Image.open(os.path.join(__location__, 'assets', 'covid.png'))
+COVID_IMAGE_URL = 'https://storage.cloud.google.com/cs329s-covid-caugh-prediction.appspot.com/images/covid.png?authuser=3'
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 
@@ -73,7 +72,7 @@ def setup_page():
   """
   Applies site-wide settings.
   """
-  st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE, layout='centered')
+  st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_URL, layout='centered')
   hide_menu()
 
 def hide_menu():
@@ -96,7 +95,7 @@ def inject_audio(blob_url):
     blob_url (str): blob URL
   """
   audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
-  st.markdown(audio_display, unsafe_allow_html=True)
+  components.html(audio_display, height=70)
 
 def information_section():
   """
@@ -123,7 +122,7 @@ def information_section():
 def main():
   setup_page()
 
-  st.image(COVID_IMAGE, width=50)
+  st.image(COVID_IMAGE_URL, width=50)
   st.title('Covid-19 Risk Evaluation')
   
   st.write('This app evaluates your risk for Covid-19 based on coughs recorded from your device.')
@@ -139,7 +138,6 @@ def main():
 
   if recording and recording is not None:
     rec = json.loads(recording)
-    #Utils.upload_blob('cs329s-covid-user-coughs', recording, 'temp_data/user_cough.wav')
     rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
     cough_conf = detect_cough(audio, rate)
     review_recording(rec['url'], cough_conf)
