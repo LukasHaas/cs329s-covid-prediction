@@ -89,14 +89,14 @@ def hide_menu():
   st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 def inject_audio(blob_url):
-    """
-    Adds audio in form of a blob.
+  """
+  Adds audio in form of a blob.
 
-    Args:
-      blob_url (str): blob URL
-    """
-    audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
-    st.markdown(audio_display, unsafe_allow_html=True)
+  Args:
+    blob_url (str): blob URL
+  """
+  audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
+  st.markdown(audio_display, unsafe_allow_html=True)
 
 def information_section():
   """
