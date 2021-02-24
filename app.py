@@ -25,12 +25,13 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 # Constants
 COVID_IMAGE_URL = './assets/covid.png'
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
+COVID_MODEL = 'MVP_XGBoost'
 COUGH_STORAGE_BUCKET = 'cs329s-covid-user-coughs'
 
 # SYMPTOMS = [
@@ -178,7 +179,7 @@ def main():
     rec = json.loads(recording)
     rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
     cough_features, cough_conf = detect_cough(audio, rate)
-    print('Cough features:\n', cough_features)
+    print('Cough features:\n', cough_features.tolist())
     review_recording(rec['url'], cough_conf)
 
     # Check if new recording was submitted and adjust session state.
@@ -198,13 +199,22 @@ def main():
 
     # Get Covid-19 Risk Evaluation
     st.subheader('Covid-19 Risk Evaluation')
-    st.write('If you click on the button below, your cough will be anonymously submited for a Covid-19 risk evaluation.')
+    st.write('Click below to anonymously submit your cough for a Covid-19 risk evaluation.')
     request_prediction = st.button('Submit Cough For Evaluation')
 
     if request_prediction:
       with st.spinner('Requesting risk evaluation ...'):
         Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
-        # send cough_features to servers
+
+        try:
+          covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0]
+          if covid_pred == 1:
+            st.error('It appears you might have Covid-19.')
+          else:
+            st.success('It appears you are Covid-19 free.')
+
+        except:
+          st.error('An error occured requesting your Covid-19 risk evaluation.')
 
       # TODO: Ask for symptoms
       # st.info('If you are willing to also share your symptoms, this could greatly accelerate research.')
