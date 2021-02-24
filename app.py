@@ -25,7 +25,7 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 # Constants
 COVID_IMAGE_URL = './assets/covid.png'
