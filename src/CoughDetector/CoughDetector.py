@@ -22,13 +22,24 @@ class CoughDetector:
         self.model = pickle.load(open(os.path.join('models', 'cough_classifier'), 'rb'))
         self.scaler = pickle.load(open(os.path.join('models','cough_classification_scaler'), 'rb'))
 
-    def classify_cough(self, x, fs):
+    def classify_cough(self, features):
         """Classify whether an inputted signal is a cough or not using filtering, feature extraction, and ML classification
+        Inputs: 
+            features: (np.array) extracted features
+        Outputs:
+            result: (float) probability that a given file is a cough 
+        """
+        feature_values_scaled = self.scaler.transform(features)
+        result = self.model.predict_proba(feature_values_scaled)[:,1]
+        return result
+
+    def extract_features(self, x, fs):
+        """Feature extraction for determining if a sound is a cough or not
         Inputs: 
             x: (float array) raw cough signal
             fs: (int) sampling rate of raw signal
         Outputs:
-            result: (float) probability that a given file is a cough 
+            result: (np.array) extracted features
         """
         try: 
             x,fs = self.__preprocess_cough(x,fs)
@@ -44,9 +55,7 @@ class CoughDetector:
                         feature_values_vec.append(value[0])
                     else:
                         feature_values_vec.append(value)
-            feature_values_scaled = self.scaler.transform(np.array(feature_values_vec).reshape(1,-1))
-            result = self.model.predict_proba(feature_values_scaled)[:,1]
-            return result[0]
+            return np.array(feature_values_vec).reshape(1,-1)
 
         except:
             "Feature extraction fails when the audio is completely silent"

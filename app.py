@@ -7,11 +7,11 @@ import io
 import os
 import time
 import json
+import uuid
 import requests
 import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
-from PIL import Image
 
 # App modules
 import src.SessionState as SessionState
@@ -26,9 +26,28 @@ import soundfile as sf
 
 # Initialization
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
-COVID_IMAGE_URL = 'https://storage.cloud.google.com/cs329s-covid-caugh-prediction.appspot.com/images/covid.png?authuser=3'
+
+# Constants
+COVID_IMAGE_URL = './assets/covid.png'
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
+COUGH_STORAGE_BUCKET = 'cs329s-covid-user-coughs'
+
+# SYMPTOMS = [
+#   'fever',
+#   'dry cough',
+#   'tiredness',
+#   'difficulty breathing or shortness of breath',
+#   'chest pain or pressure',
+#   'loss of speech or movement',
+#   'aches and pains',
+#   'sore throat',
+#   'diarrhoea',
+#   'conjunctivitis',
+#   'headache',
+#   'loss of taste or smell',
+#   'a rash on skin, or discolouration of fingers or toes'
+# ]
 
 COUGH_DETECTOR = CoughDetector()
 
@@ -43,8 +62,9 @@ def detect_cough(recording, sr):
   Returns:
     pred_conf (float): predicted confidence of cough existence.
   """
-  pred_conf = COUGH_DETECTOR.classify_cough(recording, sr)
-  return pred_conf
+  features = COUGH_DETECTOR.extract_features(recording, sr)
+  pred_conf = COUGH_DETECTOR.classify_cough(features)
+  return features, pred_conf
 
 def review_recording(recording_url, cough_conf):
   """
@@ -97,6 +117,20 @@ def inject_audio(blob_url):
   audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
   components.html(audio_display, height=70)
 
+def check_for_new_recording(recording, session_state):
+  """
+  Checks if a new recoding was made.
+
+  Args:
+    recording (str): JSON string of recording
+    session_state (SessionState): session state
+  """
+  if session_state.recording_hash != hash(recording):
+    print('New recording recorded.')
+    # session_state.cough_donated = False
+    session_state.cough_uuid = str(uuid.uuid4())
+    session_state.recording_hash = hash(recording)
+
 def information_section():
   """
   Render an information section
@@ -112,15 +146,17 @@ def information_section():
     evaluation will be generated entirely anonymously.
     """)
 
-  with st.beta_expander("Algorithm Details"):
+  with st.beta_expander("Disclaimer & Algorithm Details"):
     st.write("""
-    Some data about the model used, training data, accuracy,
-    and how results should be interpreted.
+    This site is used for testing purposes and any Covid-19 risk evaluations
+    are unaccruate as of this moment. We do not take any responsibility for
+    the predictions made by this application.
     """)
 
 
 def main():
   setup_page()
+  session_state = SessionState.get(recording_hash=None, cough_donated=False, cough_uuid=None)
 
   st.image(COVID_IMAGE_URL, width=50)
   st.title('Covid-19 Risk Evaluation')
@@ -137,10 +173,44 @@ def main():
   recording = CovidRecordButton(duration=5000)
 
   if recording and recording is not None:
+
+    # Get recording and display audio bar
     rec = json.loads(recording)
     rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
-    cough_conf = detect_cough(audio, rate)
+    cough_features, cough_conf = detect_cough(audio, rate)
+    print('Cough features:\n', cough_features)
     review_recording(rec['url'], cough_conf)
+
+    # Check if new recording was submitted and adjust session state.
+    check_for_new_recording(recording, session_state)
+
+    # Share your cough for research purposes
+    if not session_state.cough_donated:
+      consent_cough = st.checkbox('I agree to anonymously donate my cough for research purposes.')
+
+      if consent_cough:
+        with st.spinner('Uploading cough ...'):
+          Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
+        st.success('Successfully donated cough.')
+        session_state.cough_donated = True
+
+    # TODO: Implement revoking consent
+
+    # Get Covid-19 Risk Evaluation
+    st.subheader('Covid-19 Risk Evaluation')
+    st.write('If you click on the button below, your cough will be anonymously submited for a Covid-19 risk evaluation.')
+    request_prediction = st.button('Submit Cough For Evaluation')
+
+    if request_prediction:
+      with st.spinner('Requesting risk evaluation ...'):
+        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
+        # send cough_features to servers
+
+      # TODO: Ask for symptoms
+      # st.info('If you are willing to also share your symptoms, this could greatly accelerate research.')
+      # consent_symptoms = st.checkbox('I agree to anonymously share my symptoms for research purposes.')
+      # if consent_symptoms:
+      #   selected_symptoms = st.multiselect('Symptoms (leave empty if you have no symptoms)', SYMPTOMS)
 
   information_section()
 
