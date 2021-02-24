@@ -94,7 +94,7 @@ def setup_page():
   Applies site-wide settings.
   """
   st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_URL, layout='centered')
-  hide_menu()
+  #hide_menu()
 
 def hide_menu():
   """
