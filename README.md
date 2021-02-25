@@ -1,4 +1,4 @@
-# <img src="" alt="Covid-19 Evaluation App - QR Code" height="15px" width="30px" /> Covid-19 Prediction App
+# <img src="./assets/covid.png" alt="Covid-19 Evaluation App - QR Code" height="30px" width="30px" /> Covid-19 Prediction App
 This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
 
 ## Demo
