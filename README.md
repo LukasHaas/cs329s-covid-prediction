@@ -1,5 +1,12 @@
 # Covid-19 Prediction App
-This app is a streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
+This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
+
+## Demo
+Scan the QR code below to see the app in action:
+
+<img src="QRCode.jpg"
+     alt="Covid-19 Evaluation App - QR Code"
+     style="margin: 10px; width: 180px" />
 
 ## Project Setup
 It is recommended to first install all required dependencies using a virtual environment.
@@ -35,3 +42,11 @@ In order to deploy the application to Google Cloud's App Engine, run the followi
 ```shell
 make gcloud-deploy
 ```
+
+## System Architecture
+### MVP
+The below diagram illustrates our MVP system architecture on Google Cloud Platform:
+
+<img src="MVPSystemDiagram.png"
+     alt="Covid-19 Evaluation App - QR Code"
+     style="margin: 10px" />
