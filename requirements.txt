@@ -3,6 +3,7 @@ SoundFile==0.10.3.post1
 sounddevice==0.4.1
 scipy==1.5.4
 librosa==0.8.0
+matplotlib==3.3.4
 numpy==1.19.5
 scikit-learn==0.22.1
 xgboost==0.90
