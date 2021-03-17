@@ -8,8 +8,11 @@ import streamlit as st
 import src.Pages.NewUserPage as NewUserPage
 import src.Pages.ReturningUserPage as ReturningUserPage
 import src.SessionState as SessionState
+from PIL import Image
 
 COVID_IMAGE_URL = './assets/covid.png'
+ROC_IMAGE_URL = './assets/ROC-curve.png'
+CONFUSION_IMAGE_URL = './assets/multi_class_confusion_matrix_precision.png'
 
 def setup_page():
   """
@@ -17,16 +20,51 @@ def setup_page():
   """
   st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_URL, layout='centered')
 
-def detailed_model_results():
+def model_information():
   """
   Shows model results in detail.
   """
-  with st.beta_expander("Disclaimer & Personalized Algorithm Details"):
+  with st.beta_expander("Disclaimer & Algorithm Details"):
     st.write("""
     This site is used for testing purposes and any Covid-19 risk evaluations
-    are inaccruate as of this moment. We do not take any responsibility
+    can be inaccurate as of this moment. We do not take any responsibility
     for the predictions made by this application.
     """)
+
+    st.markdown("""
+    Our model uses three categories of features to provide a prediction to our user on whether their cough sample may be 
+    associated with Covid-19 including: embedding-based features, audio features, and demographic/symptom information.
+    * *Embedding-Based Features*:
+      * When a user submits a cough, our model performs VGGish embeddings on the audio data in the cloud.
+       Through our research, we recognized different patterns in a healthy person's audio embeddings vs a Covid-positive 
+       individual's audio embedding. Therefore, we use the provided audio sample embeddings as a feature to help our model 
+       gauge the risk factor that the user has Covid-19.
+    * *Audio Features:*
+      * When a user submits a cough, our model calculates various measurements that help capture what the medical community 
+      has identified as a 'dry cough' associated with Covid infection. Specifically we look at the max signal (loudest point), 
+      median signal (average loudness), and spectral bandwidth (the duration of the cough in comparision to its peak). We 
+      use these metrics as features in our model.
+    * *Demographic/Symptom Information:*
+      * Lastly, our app uses clinically relevant background information provided by the user to help contribute to its 
+      prediction. These features are the patient's age, respiratory condition and fever/muscle pain status.  
+    """
+                  )
+    st.write("""
+            It is important to recognize the limitations of our model, in its current iteration we are achieving the following
+            accuracy results:
+            """)
+
+    image = Image.open(ROC_IMAGE_URL)
+    st.image(image=image, width=400)
+
+    st.write("""
+          Currently our model is trained on an 2X augmented training set of 5,031 examples (1,677 examples)
+          per class and evaluated on a 2X augmented test set of 420 examples. Displayed below is the confusion
+          matrix of our model on real world test examples.
+      """)
+
+    image = Image.open(CONFUSION_IMAGE_URL)
+    st.image(image=image, width=400)
 
 def information_section(session_state):
   """
@@ -35,15 +73,7 @@ def information_section(session_state):
   st.subheader('Information')
   st.write('We encourage you to read through the following information sections:')
 
-  if session_state.successful_prediction:
-    detailed_model_results()
-  else:
-    with st.beta_expander("Disclaimer & Algorithm Details"):
-      st.write("""
-      This site is used for testing purposes and any Covid-19 risk evaluations
-      are inaccruate as of this moment. We do not take any responsibility
-      for the predictions made by this application.
-      """)
+  model_information()
 
   with st.beta_expander("Data Privacy Policy"):
     st.write("""
