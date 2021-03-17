@@ -17,11 +17,11 @@ def setup_page():
   """
   st.set_page_config(page_title='Covid Risk Evaluation', page_icon=COVID_IMAGE_URL, layout='centered')
 
-def detailed_model_results():
+def model_information():
   """
   Shows model results in detail.
   """
-  with st.beta_expander("Disclaimer & Personalized Algorithm Details"):
+  with st.beta_expander("Disclaimer & Algorithm Details"):
     st.write("""
     This site is used for testing purposes and any Covid-19 risk evaluations
     are inaccruate as of this moment. We do not take any responsibility
@@ -35,15 +35,7 @@ def information_section(session_state):
   st.subheader('Information')
   st.write('We encourage you to read through the following information sections:')
 
-  if session_state.successful_prediction:
-    detailed_model_results()
-  else:
-    with st.beta_expander("Disclaimer & Algorithm Details"):
-      st.write("""
-      This site is used for testing purposes and any Covid-19 risk evaluations
-      are inaccruate as of this moment. We do not take any responsibility
-      for the predictions made by this application.
-      """)
+  model_information()
 
   with st.beta_expander("Data Privacy Policy"):
     st.write("""

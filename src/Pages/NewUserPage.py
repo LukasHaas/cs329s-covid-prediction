@@ -176,9 +176,16 @@ def pcr_test_phrase(session_state):
         """)
         st.info(phrase)
 
+def prediction_explanation(session_state):
+    st.write("""
+    We make our predictions using a model that combines both the cough recording
+    and the extra information you have provided.
+    """)
+    # TODO John, extra personalized prediction info here.
 
 def consent(session_state, recording):
     # Consent
+    st.subheader('Contribute to Research')
     st.info("""
     Your cough recording and extra information was used for prediction,
     but they aren't stored. You can help accelerate research if you contribute
@@ -224,9 +231,6 @@ def risk_evaluation(session_state, recording, cough_features, extra_information)
           session_state.successful_prediction = True
         except:
           st.error('An error occured requesting your Covid-19 risk evaluation.')
-
-    if session_state.successful_prediction:
-      consent(session_state, recording)
 
 def get_boolean_value(value):
     """
@@ -274,10 +278,13 @@ def app(session_state):
     muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
     age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
     extra_information = {
-      'respiratory_condition': respiratory_condition,
-      'fever_muscle_pain': fever or muscle_pain,
+      'respiratory_condition': get_boolean_value(respiratory_condition),
+      'fever_muscle_pain': get_boolean_value(fever) or get_boolean_value(muscle_pain),
       'age': int(age)
     }
 
     # Get risk evaluation
     risk_evaluation(session_state, recording, cough_features, extra_information)
+    if session_state.successful_prediction:
+      prediction_explanation(session_state)
+      consent(session_state, recording)
