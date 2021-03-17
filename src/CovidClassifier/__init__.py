@@ -1,0 +1,1 @@
+from .CovidClassifier import CovidClassifier

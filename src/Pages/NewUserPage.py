@@ -11,6 +11,7 @@ import streamlit.components.v1 as components
 
 # App modules
 import src.Utils as Utils
+from src.CovidClassifier import CovidClassifier
 from src.CoughDetector import CoughDetector
 from src.CustomComponents import CovidRecordButton
 
@@ -20,7 +21,7 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 # Project Constants
 PROJECT = 'cs329s-covid-caugh-prediction'
@@ -52,6 +53,7 @@ SYMPTOMS = [
 ]
 
 COUGH_DETECTOR = CoughDetector()
+COVID_CLASSIFIER = CovidClassifier()
 
 @st.cache(show_spinner=False)
 def detect_cough(recording, sr):
@@ -66,7 +68,19 @@ def detect_cough(recording, sr):
   """
   features = COUGH_DETECTOR.extract_features(recording, sr)
   pred_conf = COUGH_DETECTOR.classify_cough(features)
-  return features, pred_conf
+  return pred_conf
+
+@st.cache(show_spinner=False)
+def predict_covid(recording, sr, clinical_features):
+  """Predicts if the cough is healthy, symptomatic (could be any class), or Covid-19.
+
+  Args:
+      recording (np.array): cough recording
+      sr (int): cough's sample rate
+  """
+  pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
+  print('Covid Predictions:', pred_conf)
+  return np.argmax(pred_conf)
 
 def review_recording(recording_url, cough_conf, rate, audio):
   """
@@ -202,7 +216,7 @@ def consent(session_state, recording):
       st.success('Successfully uploaded the extra information.')
     # TODO: Implement revoking consent
 
-def risk_evaluation(session_state, recording, cough_features, extra_information):
+def risk_evaluation(session_state, recording, audio, sr, extra_information):
     """
     #TODO
     """
@@ -216,8 +230,9 @@ def risk_evaluation(session_state, recording, cough_features, extra_information)
         Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
 
         try:
-          covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0]
-          if covid_pred == 1:
+          covid_pred = predict_covid(audio, sr, extra_information)
+          #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
+          if covid_pred == 2:
             st.error('It appears you might have Covid-19.')
           else:
             st.success('It appears you are Covid-19 free.')
@@ -247,15 +262,14 @@ def app(session_state):
   st.write('Please minimize any background noise.')
 
   # Custom Streamlit component using javascript to query client-side microphone devices
-  recording = CovidRecordButton(duration=500)
+  recording = CovidRecordButton(duration=5000)
 
   if recording and recording is not None:
 
     # Get recording and display audio bar
     rec = json.loads(recording)
     rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
-    cough_features, cough_conf = detect_cough(audio, rate)
-    print('Cough features:\n', cough_features.tolist())
+    cough_conf = detect_cough(audio, rate)
     review_recording(rec['url'], cough_conf, rate, audio)
 
     # Check if new recording was submitted and adjust session state.
@@ -274,10 +288,10 @@ def app(session_state):
     muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
     age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
     extra_information = {
-      'respiratory_condition': respiratory_condition,
-      'fever_muscle_pain': fever or muscle_pain,
+      'respiratory_condition': BINARY_ANSWERS.index(respiratory_condition),
+      'fever_muscle_pain': BINARY_ANSWERS.index(fever or muscle_pain),
       'age': int(age)
     }
 
     # Get risk evaluation
-    risk_evaluation(session_state, recording, cough_features, extra_information)
+    risk_evaluation(session_state, recording, audio, rate, extra_information)
