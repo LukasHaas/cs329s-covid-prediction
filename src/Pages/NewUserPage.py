@@ -61,38 +61,38 @@ COVID_CLASSIFIER = CovidClassifier()
 @st.cache(show_spinner=False)
 def detect_cough(recording, sr):
     """
-  Predicts whether a cough is present in the recording using model stored in app.
+    Predicts whether a cough is present in the recording using model stored in app.
 
-  Args:
-    recording (np.array): user recording.
-    sr (int): sample rate
-  Returns:
-    pred_conf (float): predicted confidence of cough existence.
-  """
-  features = COUGH_DETECTOR.extract_features(recording, sr)
-  pred_conf = COUGH_DETECTOR.classify_cough(features)
-  return pred_conf
+    Args:
+      recording (np.array): user recording.
+      sr (int): sample rate
+    Returns:
+      pred_conf (float): predicted confidence of cough existence.
+    """
+    features = COUGH_DETECTOR.extract_features(recording, sr)
+    pred_conf = COUGH_DETECTOR.classify_cough(features)
+    return pred_conf
 
 @st.cache(show_spinner=False)
 def predict_covid(recording, sr, clinical_features):
-  """Predicts if the cough is healthy, symptomatic (could be any class), or Covid-19.
+    """Predicts if the cough is healthy, symptomatic (could be any class), or Covid-19.
 
-  Args:
-      recording (np.array): cough recording
-      sr (int): cough's sample rate
-  """
-  pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
-  print('Covid Predictions:', pred_conf)
-  return np.argmax(pred_conf)
+    Args:
+        recording (np.array): cough recording
+        sr (int): cough's sample rate
+    """
+    pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
+    print('Covid Predictions:', pred_conf)
+    return np.argmax(pred_conf)
 
 def review_recording(recording_url, cough_conf, rate, audio):
     """
-  Loads the recorded cough sound and allows user to review.
+    Loads the recorded cough sound and allows user to review.
 
-  Args:
-    recording_url (str): url to audio blob file
-    cough_conf (float): cough detection model confidence
-  """
+    Args:
+      recording_url (str): url to audio blob file
+      cough_conf (float): cough detection model confidence
+    """
 
     st.write('Review your recording:')
 
@@ -111,36 +111,36 @@ def review_recording(recording_url, cough_conf, rate, audio):
 
 def hide_menu():
     """
-  Hides streamlit menu by injecting HTML & CSS.
-  """
+    Hides streamlit menu by injecting HTML & CSS.
+    """
     hide_streamlit_style = """
-  <style>
-  #MainMenu {visibility: hidden;}
-  footer {visibility: hidden;}
-  </style>
-  """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+    """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 def inject_audio_player(blob_url):
     """
-  Adds audio in form of a blob.
+    Adds audio in form of a blob.
 
-  Args:
-    blob_url (str): blob URL
-  """
+    Args:
+      blob_url (str): blob URL
+    """
     audio_display = f"""<audio controls src={blob_url} style="width:100%;" type='audio/wav'></audio>"""
     st.markdown(audio_display, unsafe_allow_html=True)
 
 
 def inject_audio_spectogram(rate, audio):
     """
-  Adds audio spectogram.
+    Adds audio spectogram.
 
-  Args:
-    rate (int): frequency of the audio.
-    audio (): audio recording.
-  """
+    Args:
+      rate (int): frequency of the audio.
+      audio (): audio recording.
+    """
     audio_downscaled = audio / (2. ** 15)
     sample_points = float(audio_downscaled.shape[0])
     sound_duration = audio_downscaled.shape[0] / rate
@@ -158,12 +158,12 @@ def inject_audio_spectogram(rate, audio):
 
 def check_for_new_recording(recording, session_state):
     """
-  Checks if a new recoding was made.
+    Checks if a new recoding was made.
 
-  Args:
-    recording (str): JSON string of recording
-    session_state (SessionState): session state
-  """
+    Args:
+      recording (str): JSON string of recording
+      session_state (SessionState): session state
+    """
     if session_state.recording_hash != hash(recording):
         print('New recording recorded.')
         # session_state.cough_donated = False
@@ -187,16 +187,16 @@ def pcr_test_phrase(session_state):
     you have your results ready, select that you are a returning user in the
     dropdown menu on the top of the page and enter your phrase.""")
 
-        valid_phrase = False
-        while not valid_phrase:
-            phrase = st.text_input('Type the phrase you would like to later add your test results and hit Enter.')
-            # Check if phrase is already in use
-            if phrase:
-                valid_phrase = True
-                st.write("""
-        You can enter the following phrase when you come back to enter your PCR result.
-        """)
-                st.info(phrase)
+    valid_phrase = False
+    while not valid_phrase:
+        phrase = st.text_input('Type the phrase you would like to later add your test results and hit Enter.')
+        # Check if phrase is already in use
+        if phrase:
+            valid_phrase = True
+            st.write("""
+    You can enter the following phrase when you come back to enter your PCR result.
+    """)
+            st.info(phrase)
 
 
 def inject_segmented_spectrogram(x, fs):
@@ -211,12 +211,12 @@ def inject_segmented_spectrogram(x, fs):
 
 def detail_recording(x, fs):
     """
-Loads the recorded cough sound and allows user to review.
+    Loads the recorded cough sound and allows user to review.
 
-Args:
-recording_url (str): url to audio blob file
-cough_conf (float): cough detection model confidence
-"""
+    Args:
+    recording_url (str): url to audio blob file
+    cough_conf (float): cough detection model confidence
+    """
 
     st.write('In order to create features for our model, we look at the cough segments recognized in your audio, as'
              ' displayed below.')
@@ -267,8 +267,7 @@ def consent(session_state, recording):
         session_state.symptoms_donated = True
     # TODO: Implement revoking consent
     
-    consent_symptoms = st.checkbox(
-        'I agree to anonymously share the extra information I provided for research purposes.')
+    consent_symptoms = st.checkbox('I agree to anonymously share the extra information I provided for research purposes.')
     session_state.symptoms_donated = True
     if consent_symptoms and not session_state.symptoms_donated:
         with st.spinner('Uploading extra information ...'):
@@ -289,24 +288,23 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
 
     if request_prediction:
       with st.spinner('Requesting risk evaluation ...'):
-        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
-
-        try:
-          covid_pred = predict_covid(audio, sr, extra_information)
-          #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
-          if covid_pred == 2:
-            st.error('Based off your cough sample and background information we do believe you are at risk for having Covid.')
-          elif covid_pred == 1:
-            st.warning('Your cough sample and background information correlates with real world examples of symptomatic \
-              users who did not test positive, please keep in mind there is still a risk you have Covid-19.')
-          else:
-            st.success('Based off your cough sample and background information we do not believe you have Covid-19.')
-          session_state.successful_prediction = True
-        except:
-          st.error('An error occured requesting your Covid-19 risk evaluation.')
+          Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
+          try:
+              covid_pred = predict_covid(audio, sr, extra_information)
+              #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
+              if covid_pred == 2:
+                  st.error('Based off your cough sample and background information we do believe you are at risk for having Covid.')
+              elif covid_pred == 1:
+                  st.warning('Your cough sample and background information correlates with real world examples of symptomatic \
+                  users who did not test positive, please keep in mind there is still a risk you have Covid-19.')
+              else:
+                  st.success('Based off your cough sample and background information we do not believe you have Covid-19.')
+              session_state.successful_prediction = True
+          except:
+              st.error('An error occured requesting your Covid-19 risk evaluation.')
 
     if session_state.successful_prediction:
-      consent(session_state, recording)
+        consent(session_state, recording)
 
 def get_boolean_value(value):
     """
@@ -331,36 +329,36 @@ def app(session_state):
     recording = CovidRecordButton(duration=5000)
 
     if recording and recording is not None:
+      
+        # Get recording and display audio bar
+        rec = json.loads(recording)
+        rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
+        cough_conf = detect_cough(audio, rate)
+        review_recording(rec['url'], cough_conf, rate, audio)
 
-    # Get recording and display audio bar
-    rec = json.loads(recording)
-    rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
-    cough_conf = detect_cough(audio, rate)
-    review_recording(rec['url'], cough_conf, rate, audio)
+        # Check if new recording was submitted and adjust session state.
+        check_for_new_recording(recording, session_state)
 
-    # Check if new recording was submitted and adjust session state.
-    check_for_new_recording(recording, session_state)
+        # Share extra information
+        st.subheader('Share Extra Information')
+        st.write("""
+    Our models work better if you share some extra information about yourself
+    and your symptoms, although doing so isn\'t required for prediction. Please
+    answer the following short questions.
+    """)
+        respiratory_condition = st.selectbox('Are you experiencing any respiratory issues?', BINARY_ANSWERS)
+        col1, col2 = st.beta_columns(2)
+        fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)
+        muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
+        age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
+        extra_information = {
+            'respiratory_condition': get_boolean_value(respiratory_condition),
+            'fever_muscle_pain': get_boolean_value(fever) or get_boolean_value(muscle_pain),
+            'age': int(age)
+        }
 
-    # Share extra information
-    st.subheader('Share Extra Information')
-    st.write("""
-Our models work better if you share some extra information about yourself
-and your symptoms, although doing so isn\'t required for prediction. Please
-answer the following short questions.
-""")
-    respiratory_condition = st.selectbox('Are you experiencing any respiratory issues?', BINARY_ANSWERS)
-    col1, col2 = st.beta_columns(2)
-    fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)
-    muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
-    age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
-    extra_information = {
-        'respiratory_condition': get_boolean_value(respiratory_condition),
-        'fever_muscle_pain': get_boolean_value(fever) or get_boolean_value(muscle_pain),
-        'age': int(age)
-    }
-
-    # Get risk evaluation
-    risk_evaluation(session_state, recording, audio, rate, extra_information)
-    if session_state.successful_prediction:
-        prediction_explanation(session_state, x, fs)
-        consent(session_state, recording)
+        # Get risk evaluation
+        risk_evaluation(session_state, recording, audio, rate, extra_information)
+        if session_state.successful_prediction:
+            prediction_explanation(session_state, x, fs)
+            consent(session_state, recording)
