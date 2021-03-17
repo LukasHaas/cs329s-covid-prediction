@@ -36,15 +36,14 @@ def information_section(session_state):
   st.write('We encourage you to read through the following information sections:')
 
   if session_state.successful_prediction:
-    with st.beta_expander("Disclaimer & Personalized Algorithm Details"):
-      detailed_model_results()
+    detailed_model_results()
   else:
-      with st.beta_expander("Disclaimer & Algorithm Details"):
-        st.write("""
-        This site is used for testing purposes and any Covid-19 risk evaluations
-        are inaccruate as of this moment. We do not take any responsibility
-        for the predictions made by this application.
-        """)
+    with st.beta_expander("Disclaimer & Algorithm Details"):
+      st.write("""
+      This site is used for testing purposes and any Covid-19 risk evaluations
+      are inaccruate as of this moment. We do not take any responsibility
+      for the predictions made by this application.
+      """)
 
   with st.beta_expander("Data Privacy Policy"):
     st.write("""
