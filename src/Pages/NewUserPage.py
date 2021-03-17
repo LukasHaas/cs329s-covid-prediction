@@ -233,12 +233,12 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
           covid_pred = predict_covid(audio, sr, extra_information)
           #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
           if covid_pred == 2:
-            st.error('It appears you might have Covid-19.')
+            st.error('Based off your cough sample and background information we do believe you are at risk for having Covid.')
           elif covid_pred == 1:
-            st.warning('You are likely Covid-19 free, however your cough exhibits some characteristics of symptomatic \
-              people who were unable to provide PCR test results.')
+            st.warning('Your cough sample and background information correlates with real world examples of symptomatic \
+              users who did not test positive, please keep in mind there is still a risk you have Covid-19.')
           else:
-            st.success('It appears you are Covid-19 free.')
+            st.success('Based off your cough sample and background information we do not believe you have Covid-19.')
           session_state.successful_prediction = True
         except:
           st.error('An error occured requesting your Covid-19 risk evaluation.')
