@@ -192,7 +192,7 @@ def app(session_state):
   st.write('Please minimize any background noise.')
 
   # Custom Streamlit component using javascript to query client-side microphone devices
-  recording = CovidRecordButton(duration=1000) # TODO
+  recording = CovidRecordButton(duration=5000)
 
   if recording and recording is not None:
 
