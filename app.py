@@ -58,7 +58,6 @@ if __name__ == '__main__':
   session_state = SessionState.get(recording_hash=None,
                                    cough_donated=False,
                                    symptoms_donated=False,
-                                   symptoms_shared=False,
                                    successful_prediction=False,
                                    cough_uuid=None)
 
@@ -77,11 +76,16 @@ if __name__ == '__main__':
     "Returning": ReturningUserPage
   }
 
-  returning_option = st.selectbox('Do you want to upload your PCR results as a returning user?', ('', 'No', 'Yes'))
+  new_user_prompt = 'new user and I would like to get a COVID-19 risk evaluation'
+  returning_user_prompt = 'returning user and I would like to submit the result of my PCR test'
 
-  if returning_option == 'No':
+  returning_option = st.selectbox('I am a',
+    ('', new_user_prompt, returning_user_prompt)
+  )
+
+  if returning_option == new_user_prompt:
     NewUserPage.app(session_state)
-  elif returning_option == 'Yes':
+  elif returning_option == returning_user_prompt:
     ReturningUserPage.app(session_state)
 
   information_section(session_state)

@@ -22,11 +22,18 @@ import soundfile as sf
 # Initialization
 #os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
-# Constants
+# Project Constants
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 COVID_MODEL = 'MVP_XGBoost'
 COUGH_STORAGE_BUCKET = 'cs329s-covid-user-coughs'
+
+# String Constants
+NOT_SELECTED = 'No selection'
+YES_ANSWER = 'Yes'
+NO_ANSWER = 'No'
+# BINARY_ANSWERS = [NOT_SELECTED, NO_ANSWER, YES_ANSWER]
+BINARY_ANSWERS = [NO_ANSWER, YES_ANSWER]
 
 SYMPTOMS = [
   'fever',
@@ -142,47 +149,95 @@ def check_for_new_recording(recording, session_state):
     session_state.cough_uuid = str(uuid.uuid4())
     session_state.recording_hash = hash(recording)
 
-def consent(session_state):
+def pcr_test_phrase(session_state):
+  """
+  TODO
+  """
+  # TODO ask if they have a PCR test result
+  if session_state.cough_donated or session_state.symptoms_donated:
+  # Future steps
+    st.subheader('Future Steps')
+    st.write("""
+    We use PCR test results to better train our models. If you have plan to
+    take a PCR test and would like to share your results, please enter a
+    phrase below which we will use to locate tie your results back to your
+    evaluation in our system when you come back. Once
+    you have your results ready, select that you are a returning user in the
+    dropdown menu on the top of the page and enter your phrase.""")
+
+    valid_phrase = False
+    while not valid_phrase:
+      phrase = st.text_input('Type the phrase you would like to later add your test results and hit Enter.')
+      # Check if phrase is already in use
+      if phrase:
+        valid_phrase = True
+        st.write("""
+        You can enter the following phrase when you come back to enter your PCR result.
+        """)
+        st.info(phrase)
+
+
+def consent(session_state, recording):
     # Consent
     st.info("""
-    Your cough recording or symptom information will be used for prediction,
-    but they won't be stored. You can help accelerate research if you contribute
-    your cough for research purposes. If you are willing to, please check the
-    box below.""")
+    Your cough recording and extra information was used for prediction,
+    but they aren't stored. You can help accelerate research if you contribute
+    your cough and extra information for research purposes. If you are willing
+    to, please check the boxes below.""")
 
-    if not session_state.cough_donated:
-      consent_cough = st.checkbox('I agree to anonymously donate my cough for research purposes.')
+    consent_cough = st.checkbox('I agree to anonymously donate my cough for research purposes.')
+    if consent_cough and not session_state.cough_donated:
+      with st.spinner('Uploading cough ...'):
+        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
+      st.success('Successfully donated cough.')
       session_state.cough_donated = True
-      if consent_cough:
-        with st.spinner('Uploading cough ...'):
-          Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
-        st.success('Successfully donated cough.')
-
     # TODO: Implement revoking consent
 
-    if session_state.symptoms_shared and not session_state.symptoms_donated:
-      consent_symptoms = st.checkbox('I agree to anonymously share my symptoms for research purposes.')
-      session_state.symptoms_donated = True
-      # TODO: Upload symptoms
+    consent_symptoms = st.checkbox('I agree to anonymously share the extra information I provided for research purposes.')
+    session_state.symptoms_donated = True
+    if consent_symptoms and not session_state.symptoms_donated:
+      with st.spinner('Uploading extra information ...'):
+          time(1000)
+          # TODO upload
+      st.success('Successfully uploaded the extra information.')
     # TODO: Implement revoking consent
 
-    if session_state.cough_donated or session_state.symptoms_donated:
-      # Future steps
-      st.subheader('Future Steps')
-      st.write("""
-      We use PCR test results to better train our models. If you have plan to
-      take a PCR test and would like to share your results, below is a unique
-      number you can use to log back on when you get back to our app. Once
-      you have your results ready, select that you are a returning user in the
-      dropdown menu on the top of the page.""")
-      st.info(session_state.cough_uuid)
+def risk_evaluation(session_state, recording, cough_features, extra_information):
+    """
+    #TODO
+    """
+    # Get Covid-19 Risk Evaluation
+    st.subheader('Covid-19 Risk Evaluation')
+    st.write('Click below to anonymously submit your cough and extra information (if provided) for a Covid-19 risk evaluation.')
+    request_prediction = st.button('Get Evaluation Results')
 
-      # # PCR test upload
-      # st.write("""
-      # If you already have PCR test results ready and would like to share them,
-      # you can also do so here.
-      # """)
-      # # TODO
+    if request_prediction:
+      with st.spinner('Requesting risk evaluation ...'):
+        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
+
+        try:
+          covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0]
+          if covid_pred == 1:
+            st.error('It appears you might have Covid-19.')
+          else:
+            st.success('It appears you are Covid-19 free.')
+          session_state.successful_prediction = True
+        except:
+          st.error('An error occured requesting your Covid-19 risk evaluation.')
+
+    if session_state.successful_prediction:
+      consent(session_state, recording)
+
+def get_boolean_value(value):
+    """
+    #TODO
+    """
+    if value == YES_ANSWER:
+        return True
+    elif value == NO_ANSWER:
+        return False
+    else:
+        return None
 
 def app(session_state):
   #default_samplerate, sample_string = Utils.assess_device_samplerate()
@@ -192,7 +247,7 @@ def app(session_state):
   st.write('Please minimize any background noise.')
 
   # Custom Streamlit component using javascript to query client-side microphone devices
-  recording = CovidRecordButton(duration=5000)
+  recording = CovidRecordButton(duration=500)
 
   if recording and recording is not None:
 
@@ -206,31 +261,23 @@ def app(session_state):
     # Check if new recording was submitted and adjust session state.
     check_for_new_recording(recording, session_state)
 
-    # Share symptoms
+    # Share extra information
     st.subheader('Share Extra Information')
-    st.write('Our models can work better if you share some extra information about yourself and your symptoms, although doing so isn\'t required for prediction.')
-    consent_symptoms_for_prediction = st.checkbox('I would like to share symptoms for prediction.')
-    if consent_symptoms_for_prediction:
-      # selected_symptoms = st.multiselect('Symptoms (leave empty if you have no symptoms)', SYMPTOMS)
-      session_state.symptoms_shared = True
+    st.write("""
+    Our models work better if you share some extra information about yourself
+    and your symptoms, although doing so isn\'t required for prediction. Please
+    answer the following short questions.
+    """)
+    respiratory_condition = st.selectbox('Are you experiencing any respiratory issues?', BINARY_ANSWERS)
+    col1, col2 = st.beta_columns(2)
+    fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)
+    muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
+    age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
+    extra_information = {
+      'respiratory_condition': respiratory_condition,
+      'fever_muscle_pain': fever or muscle_pain,
+      'age': int(age)
+    }
 
-    # Get Covid-19 Risk Evaluation
-    st.subheader('Covid-19 Risk Evaluation')
-    st.write('Click below to anonymously submit your cough for a Covid-19 risk evaluation.')
-    request_prediction = st.button('Submit Cough For Evaluation')
-
-    if request_prediction:
-      with st.spinner('Requesting risk evaluation ...'):
-        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
-
-        try:
-          covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0]
-          if covid_pred == 1:
-            st.error('It appears you might have Covid-19.')
-          else:
-            st.success('It appears you are Covid-19 free.')
-            session_state.successful_prediction = True
-        except:
-          st.error('An error occured requesting your Covid-19 risk evaluation.')
-
-        consent(session_state)
+    # Get risk evaluation
+    risk_evaluation(session_state, recording, cough_features, extra_information)
