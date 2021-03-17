@@ -148,7 +148,7 @@ def inject_audio_spectogram(rate, audio):
     time_array = time_array / rate
     time_array = time_array * 1000
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(time_array, audio_downscaled)
     ax.set_xlabel("Time (ms) ")
@@ -173,8 +173,8 @@ def check_for_new_recording(recording, session_state):
 
 def pcr_test_phrase(session_state):
     """
-  TODO
-  """
+    TODO
+    """
     # TODO ask if they have a PCR test result
     if session_state.cough_donated or session_state.symptoms_donated:
         # Future steps
@@ -249,24 +249,24 @@ def prediction_explanation(session_state, x, fs):
 
     # TODO John, extra personalized prediction info here.
 
-
 def consent(session_state, recording):
     # Consent
     st.subheader('Contribute to Research')
     st.info("""
-    Your cough recording and extra information was used for prediction,
+    Your cough recording and extra information provided were used for prediction,
     but they aren't stored. You can help accelerate research if you contribute
     your cough and extra information for research purposes. If you are willing
     to, please check the boxes below.""")
 
-    consent_cough = st.checkbox('I agree to anonymously donate my cough for research purposes.')
+    consent_cough = st.checkbox('I agree to anonymously donate my cough and exra information provided for research purposes.')
     if consent_cough and not session_state.cough_donated:
-        with st.spinner('Uploading cough ...'):
+        with st.spinner('Uploading information ...'):
             Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
-        st.success('Successfully donated cough.')
+        st.success('Successfully uploaded!')
         session_state.cough_donated = True
+        session_state.symptoms_donated = True
     # TODO: Implement revoking consent
-
+    
     consent_symptoms = st.checkbox(
         'I agree to anonymously share the extra information I provided for research purposes.')
     session_state.symptoms_donated = True
@@ -327,8 +327,8 @@ def app(session_state):
     st.subheader('Record a 5 Second Cough Sample')
     st.write('Please minimize any background noise.')
 
-  # Custom Streamlit component using javascript to query client-side microphone devices
-  recording = CovidRecordButton(duration=5000)
+    # Custom Streamlit component using javascript to query client-side microphone devices
+    recording = CovidRecordButton(duration=5000)
 
     if recording and recording is not None:
 

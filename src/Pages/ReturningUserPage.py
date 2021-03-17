@@ -23,7 +23,7 @@ def app(session_state):
       with st.spinner('Uploading the PCR test results ...'):
         try:
           time.sleep(2) # TODO replace with actual upload
-          st.success('Successfully uploaded PCR result!')
+          st.success('Successfully uploaded the PCR result!')
         except:
           st.error('An error occured while uploading the PCR result. Please try again.')
           print(e)
