@@ -4,6 +4,7 @@ sounddevice==0.4.1
 scipy==1.5.4
 librosa==0.8.0
 matplotlib==3.3.4
+mysql-connector-python==8.0.23
 numpy==1.19.5
 scikit-learn==0.22.1
 xgboost==0.90
