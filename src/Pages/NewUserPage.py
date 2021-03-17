@@ -13,6 +13,7 @@ import librosa.display
 
 # App modules
 import src.Utils as Utils
+from src.CovidClassifier import CovidClassifier
 from src.CoughDetector import CoughDetector
 from src.CustomComponents import CovidRecordButton
 
@@ -22,7 +23,7 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 # Project Constants
 PROJECT = 'cs329s-covid-caugh-prediction'
@@ -54,6 +55,7 @@ SYMPTOMS = [
 ]
 
 COUGH_DETECTOR = CoughDetector()
+COVID_CLASSIFIER = CovidClassifier()
 
 
 @st.cache(show_spinner=False)
@@ -67,10 +69,21 @@ def detect_cough(recording, sr):
   Returns:
     pred_conf (float): predicted confidence of cough existence.
   """
-    features = COUGH_DETECTOR.extract_features(recording, sr)
-    pred_conf = COUGH_DETECTOR.classify_cough(features)
-    return features, pred_conf
+  features = COUGH_DETECTOR.extract_features(recording, sr)
+  pred_conf = COUGH_DETECTOR.classify_cough(features)
+  return pred_conf
 
+@st.cache(show_spinner=False)
+def predict_covid(recording, sr, clinical_features):
+  """Predicts if the cough is healthy, symptomatic (could be any class), or Covid-19.
+
+  Args:
+      recording (np.array): cough recording
+      sr (int): cough's sample rate
+  """
+  pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
+  print('Covid Predictions:', pred_conf)
+  return np.argmax(pred_conf)
 
 def review_recording(recording_url, cough_conf, rate, audio):
     """
@@ -253,8 +266,18 @@ def consent(session_state, recording):
         session_state.cough_donated = True
         session_state.symptoms_donated = True
     # TODO: Implement revoking consent
+    
+    consent_symptoms = st.checkbox(
+        'I agree to anonymously share the extra information I provided for research purposes.')
+    session_state.symptoms_donated = True
+    if consent_symptoms and not session_state.symptoms_donated:
+        with st.spinner('Uploading extra information ...'):
+            time(1000)
+            # TODO upload
+        st.success('Successfully uploaded the extra information.')
+    # TODO: Implement revoking consent
 
-def risk_evaluation(session_state, recording, cough_features, extra_information):
+def risk_evaluation(session_state, recording, audio, sr, extra_information):
     """
     #TODO
     """
@@ -265,19 +288,25 @@ def risk_evaluation(session_state, recording, cough_features, extra_information)
     request_prediction = st.button('Get Evaluation Results')
 
     if request_prediction:
-        with st.spinner('Requesting risk evaluation ...'):
-            Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
+      with st.spinner('Requesting risk evaluation ...'):
+        Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
 
-            try:
-                covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0]
-                if covid_pred == 1:
-                    st.error('It appears you might have Covid-19.')
-                else:
-                    st.success('It appears you are Covid-19 free.')
-                session_state.successful_prediction = True
-            except:
-                st.error('An error occured requesting your Covid-19 risk evaluation.')
+        try:
+          covid_pred = predict_covid(audio, sr, extra_information)
+          #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
+          if covid_pred == 2:
+            st.error('Based off your cough sample and background information we do believe you are at risk for having Covid.')
+          elif covid_pred == 1:
+            st.warning('Your cough sample and background information correlates with real world examples of symptomatic \
+              users who did not test positive, please keep in mind there is still a risk you have Covid-19.')
+          else:
+            st.success('Based off your cough sample and background information we do not believe you have Covid-19.')
+          session_state.successful_prediction = True
+        except:
+          st.error('An error occured requesting your Covid-19 risk evaluation.')
 
+    if session_state.successful_prediction:
+      consent(session_state, recording)
 
 def get_boolean_value(value):
     """
@@ -303,37 +332,35 @@ def app(session_state):
 
     if recording and recording is not None:
 
-        # Get recording and display audio bar
-        rec = json.loads(recording)
-        x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
-        rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
-        cough_features, cough_conf = detect_cough(audio, rate)
-        print('Cough features:\n', cough_features.tolist())
-        review_recording(rec['url'], cough_conf, rate, audio)
+    # Get recording and display audio bar
+    rec = json.loads(recording)
+    rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
+    cough_conf = detect_cough(audio, rate)
+    review_recording(rec['url'], cough_conf, rate, audio)
 
-        # Check if new recording was submitted and adjust session state.
-        check_for_new_recording(recording, session_state)
+    # Check if new recording was submitted and adjust session state.
+    check_for_new_recording(recording, session_state)
 
-        # Share extra information
-        st.subheader('Share Extra Information')
-        st.write("""
-    Our models work better if you share some extra information about yourself
-    and your symptoms, although doing so isn\'t required for prediction. Please
-    answer the following short questions.
-    """)
-        respiratory_condition = st.selectbox('Are you experiencing any respiratory issues?', BINARY_ANSWERS)
-        col1, col2 = st.beta_columns(2)
-        fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)
-        muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
-        age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
-        extra_information = {
-            'respiratory_condition': get_boolean_value(respiratory_condition),
-            'fever_muscle_pain': get_boolean_value(fever) or get_boolean_value(muscle_pain),
-            'age': int(age)
-        }
+    # Share extra information
+    st.subheader('Share Extra Information')
+    st.write("""
+Our models work better if you share some extra information about yourself
+and your symptoms, although doing so isn\'t required for prediction. Please
+answer the following short questions.
+""")
+    respiratory_condition = st.selectbox('Are you experiencing any respiratory issues?', BINARY_ANSWERS)
+    col1, col2 = st.beta_columns(2)
+    fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)
+    muscle_pain = col2.selectbox('Do you have muscle pain?', BINARY_ANSWERS)
+    age = st.number_input('How old are you?', min_value=0, max_value=140, step=1, format='%d')
+    extra_information = {
+        'respiratory_condition': get_boolean_value(respiratory_condition),
+        'fever_muscle_pain': get_boolean_value(fever) or get_boolean_value(muscle_pain),
+        'age': int(age)
+    }
 
-        # Get risk evaluation
-        risk_evaluation(session_state, recording, cough_features, extra_information)
-        if session_state.successful_prediction:
-            prediction_explanation(session_state, x, fs)
-            consent(session_state, recording)
+    # Get risk evaluation
+    risk_evaluation(session_state, recording, audio, rate, extra_information)
+    if session_state.successful_prediction:
+        prediction_explanation(session_state, x, fs)
+        consent(session_state, recording)
