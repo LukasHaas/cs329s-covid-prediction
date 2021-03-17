@@ -9,7 +9,7 @@ def app(session_state):
   when you provided your cough samples.
   """)
 
-  phrase = st.text_input('Type your phrase')
+  phrase = st.text_input('Type your phrase', key='returningUserPhrase')
   test_date = st.date_input("Enter the date of the PCR Test")
   st.selectbox('What was your PCR test result?', ['Negative', 'Positive'])
   upload_button = st.button('Upload PCR Test Result')
