@@ -12,7 +12,7 @@ from PIL import Image
 
 COVID_IMAGE_URL = './assets/covid.png'
 ROC_IMAGE_URL = './assets/ROC-curve.png'
-CONFUSION_IMAGE_URL = './assets/multi_class_confusion_matrix_precision.png'
+CONFUSION_IMAGE_URL = './assets/multi_class_confusion_matrix.png'
 
 def setup_page():
   """
@@ -33,23 +33,26 @@ def model_information():
 
     st.markdown("""
     Our model uses three categories of features to provide a prediction to our user on whether their cough sample may be 
-    associated with Covid-19 including: embedding-based features, audio features, and demographic/symptom information.
+    associated with Covid-19 including: embedding-based features, audio features, and demographic/symptom information.\
+
     * *Embedding-Based Features*:
       * When a user submits a cough, our model performs VGGish embeddings on the audio data in the cloud.
        Through our research, we recognized different patterns in a healthy person's audio embeddings vs a Covid-positive 
        individual's audio embedding. Therefore, we use the provided audio sample embeddings as a feature to help our model 
-       gauge the risk factor that the user has Covid-19.
+       gauge the risk factor that the user has Covid-19.\
+
     * *Audio Features:*
       * When a user submits a cough, our model calculates various measurements that help capture what the medical community 
       has identified as a 'dry cough' associated with Covid infection. Specifically we look at the max signal (loudest point), 
       median signal (average loudness), and spectral bandwidth (the duration of the cough in comparision to its peak). We 
-      use these metrics as features in our model.
+      use these metrics as features in our model.\
+
     * *Demographic/Symptom Information:*
       * Lastly, our app uses clinically relevant background information provided by the user to help contribute to its 
-      prediction. These features are the patient's age, respiratory condition and fever/muscle pain status.  
+      prediction. These features are the patient's age, respiratory condition and fever/muscle pain status.\
     """
                   )
-    st.write("""
+    st.write("""\n
             It is important to recognize the limitations of our model, in its current iteration we are achieving the following
             accuracy results:
             """)
@@ -57,7 +60,7 @@ def model_information():
     image = Image.open(ROC_IMAGE_URL)
     st.image(image=image, width=400)
 
-    st.write("""
+    st.write("""\n
           Currently our model is trained on an 2X augmented training set of 5,031 examples (1,677 examples)
           per class and evaluated on a 2X augmented test set of 420 examples. Displayed below is the confusion
           matrix of our model on real world test examples.
