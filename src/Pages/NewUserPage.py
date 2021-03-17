@@ -16,6 +16,7 @@ import src.Utils as Utils
 from src.CovidClassifier import CovidClassifier
 from src.CoughDetector import CoughDetector
 from src.CustomComponents import CovidRecordButton
+from src.MockData.KeyPhrases import KEY_PHRASES
 
 # Audio recording + processing
 from scipy.io import wavfile
@@ -180,24 +181,34 @@ def pcr_test_phrase(session_state):
         # Future steps
         st.subheader('Future Steps')
         st.write("""
-    We use PCR test results to better train our models. If you have plan to
-    take a PCR test and would like to share your results, please enter a
-    phrase below which we will use to locate tie your results back to your
-    evaluation in our system when you come back. Once
-    you have your results ready, select that you are a returning user in the
-    dropdown menu on the top of the page and enter your phrase.""")
+        We use PCR test results to better train our models. If you have plan to
+        take a PCR test and would like to share your results, please enter a
+        phrase below which we will use to tie your results back to your
+        evaluation in our system when you come back. Once
+        you have your results ready, select that you are a returning user in the
+        dropdown menu on the top of the page and enter your phrase.""")
 
-    valid_phrase = False
-    while not valid_phrase:
-        phrase = st.text_input('Type the phrase you would like to later add your test results and hit Enter.')
-        # Check if phrase is already in use
-        if phrase:
-            valid_phrase = True
-            st.write("""
-    You can enter the following phrase when you come back to enter your PCR result.
-    """)
-            st.info(phrase)
+        phrase = st.text_input('Type your phrase')
+        phrase_set_button = st.button('Set Phrase')
 
+        if phrase_set_button:
+            if phrase.strip() in KEY_PHRASES:
+                st.error("""
+                The phrase you typed is already in use. Can you select a different phrase?
+                """)
+            else:
+                with st.spinner('Setting your phrase ...'):
+                    try:
+                        KEY_PHRASES.append(phrase.strip())
+                        time.sleep(2) # TODO replace with actual upload
+                        st.success(
+                        f"""
+                        Successfully set your phrase. When you return, please
+                        select the returning user option in the dropdown on
+                        top of the page, then enter the phrase {phrase} when asked.
+                        """)
+                    except:
+                        st.error('An error occured setting your phrase. Please try again.')
 
 def inject_segmented_spectrogram(x, fs):
     cough_segments, cough_mask = Utils.segment_cough(x, fs)
@@ -258,22 +269,13 @@ def consent(session_state, recording):
     your cough and extra information for research purposes. If you are willing
     to, please check the boxes below.""")
 
-    consent_cough = st.checkbox('I agree to anonymously donate my cough and exra information provided for research purposes.')
+    consent_cough = st.checkbox('I agree to anonymously donate my cough and extra information provided for research purposes.')
     if consent_cough and not session_state.cough_donated:
         with st.spinner('Uploading information ...'):
             Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
         st.success('Successfully uploaded!')
         session_state.cough_donated = True
         session_state.symptoms_donated = True
-    # TODO: Implement revoking consent
-    
-    consent_symptoms = st.checkbox('I agree to anonymously share the extra information I provided for research purposes.')
-    session_state.symptoms_donated = True
-    if consent_symptoms and not session_state.symptoms_donated:
-        with st.spinner('Uploading extra information ...'):
-            time(1000)
-            # TODO upload
-        st.success('Successfully uploaded the extra information.')
     # TODO: Implement revoking consent
 
 def risk_evaluation(session_state, recording, audio, sr, extra_information):
@@ -303,9 +305,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
           except:
               st.error('An error occured requesting your Covid-19 risk evaluation.')
 
-    if session_state.successful_prediction:
-        consent(session_state, recording)
-
 def get_boolean_value(value):
     """
     #TODO
@@ -329,7 +328,7 @@ def app(session_state):
     recording = CovidRecordButton(duration=5000)
 
     if recording and recording is not None:
-      
+
         # Get recording and display audio bar
         rec = json.loads(recording)
         rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
@@ -362,3 +361,4 @@ def app(session_state):
         if session_state.successful_prediction:
             prediction_explanation(session_state, audio, rate)
             consent(session_state, recording)
+            pcr_test_phrase(session_state)
