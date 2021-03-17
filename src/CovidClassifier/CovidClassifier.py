@@ -79,53 +79,53 @@ class CovidClassifier:
         :return: the populated feature vector
         :rtype: numpy.ndarray
         """
-        #try:
-        frame_len = int(fs / 10)  # 100 ms
-        hop = int(frame_len / 2)  # 50% overlap, meaning 5ms hop length
+        try:
+          frame_len = int(fs / 10)  # 100 ms
+          hop = int(frame_len / 2)  # 50% overlap, meaning 5ms hop length
 
-        # normalise the sound signal before processing
-        signal = signal / np.max(np.abs(signal))
+          # normalise the sound signal before processing
+          signal = signal / np.max(np.abs(signal))
 
-        # trim the signal to the appropriate length
-        trimmed_signal, idc = librosa.effects.trim(signal, frame_length=frame_len, hop_length=hop)
+          # trim the signal to the appropriate length
+          trimmed_signal, idc = librosa.effects.trim(signal, frame_length=frame_len, hop_length=hop)
 
-        # extract the signal duration
-        signal_duration = librosa.get_duration(y=trimmed_signal, sr=fs)
+          # extract the signal duration
+          signal_duration = librosa.get_duration(y=trimmed_signal, sr=fs)
 
-        # find the onset strength of the trimmed signal
-        o_env = librosa.onset.onset_strength(trimmed_signal, sr=fs)
+          # find the onset strength of the trimmed signal
+          o_env = librosa.onset.onset_strength(trimmed_signal, sr=fs)
 
-        # find the frames of the onset
-        onset_frames = librosa.onset.onset_detect(onset_envelope=o_env, sr=fs)
+          # find the frames of the onset
+          onset_frames = librosa.onset.onset_detect(onset_envelope=o_env, sr=fs)
 
-        # keep only the first onset frame
-        onsets = onset_frames.shape[0]
+          # keep only the first onset frame
+          onsets = onset_frames.shape[0]
 
-        # decompose the signal into its magnitude and the phase components such that signal = mag * phase
-        mag, phase = librosa.magphase(librosa.stft(trimmed_signal, n_fft=frame_len, hop_length=hop))
+          # decompose the signal into its magnitude and the phase components such that signal = mag * phase
+          mag, phase = librosa.magphase(librosa.stft(trimmed_signal, n_fft=frame_len, hop_length=hop))
 
-        # extract the rms from the magnitude component
-        rms = librosa.feature.rms(y=trimmed_signal)[0]
-        s = pd.Series(rms)
-        rms_skew = s.skew()
+          # extract the rms from the magnitude component
+          rms = librosa.feature.rms(y=trimmed_signal)[0]
+          s = pd.Series(rms)
+          rms_skew = s.skew()
 
-        # extract the spectral bandwith of the magnitude
-        spec_bandwidth = librosa.feature.spectral_bandwidth(S=mag)[0]
+          # extract the spectral bandwith of the magnitude
+          spec_bandwidth = librosa.feature.spectral_bandwidth(S=mag)[0]
 
-        # pack the extracted features into the feature vector to be returned
-        signal_features = np.concatenate(
-            (
-                np.array([signal_duration, onsets]),
-                self.__get_period(signal, signal_sr=fs),
-                np.array([np.max(rms), np.median(rms), np.percentile(rms, 25), rms_skew]),
-                    np.array([np.mean(spec_bandwidth)])
-            ),
-            axis=0,
-        )
-        return signal_features
+          # pack the extracted features into the feature vector to be returned
+          signal_features = np.concatenate(
+              (
+                  np.array([signal_duration, onsets]),
+                  self.__get_period(signal, signal_sr=fs),
+                  np.array([np.max(rms), np.median(rms), np.percentile(rms, 25), rms_skew]),
+                      np.array([np.mean(spec_bandwidth)])
+              ),
+              axis=0,
+          )
+          return signal_features
 
-        #except:
-        #    return np.zeros(8)
+        except:
+            return np.zeros(8)
 
     def __get_period(self, signal, signal_sr):
         """Extract the period from the the provided signal
