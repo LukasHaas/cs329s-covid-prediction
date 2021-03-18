@@ -25,7 +25,9 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+CREDENTIALS_FILE = 'gcp-service-account.json'
+if os.path.isfile(CREDENTIALS_FILE):
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = CREDENTIALS_FILE
 
 # Project Constants
 PROJECT = 'cs329s-covid-caugh-prediction'
