@@ -1,5 +1,6 @@
 import os
 import pickle
+import logging
 import librosa
 import numpy as np
 import pandas as pd
@@ -28,9 +29,9 @@ class CovidClassifier:
         audio_features = self.__extract_audio_features(audio, fs)
         clinical_features = self.__extract_clinical_features(clinical_features)
 
-        print('VGGish Features:', vggish_features)
-        print('Audio Features:', audio_features)
-        print('Clinical Features:', clinical_features)
+        logging.debug('VGGish Features:', vggish_features)
+        logging.debug('Audio Features:', audio_features)
+        logging.debug('Clinical Features:', clinical_features)
 
         features = np.concatenate((vggish_features, audio_features, clinical_features))
         result = self.model.predict_proba(np.array([features]))
@@ -51,6 +52,7 @@ class CovidClassifier:
             ])
 
         except:
+            logging.error('Error extracting clinical features.')
             return np.zeros(3)
 
     def __extract_vggish_features(self, audio, fs):
@@ -68,6 +70,8 @@ class CovidClassifier:
             embeddings = get_vggish_embedding(GCP_PROJECT, GCP_MODEL, cut_audio)[0]['output_0']
             return np.mean(embeddings, axis=0)[VGGISH_EMBEDDING_INDEX]
         except:
+            logging.warning('Could not obtain VGGish embeddings. Check if AI Platform endpoint is enabled \
+            and credentials are set.')
             return np.array([MEAN_VGGISH_EMBEDDING])
 
     def __extract_audio_features(self, signal, fs):
@@ -125,6 +129,7 @@ class CovidClassifier:
           return signal_features
 
         except:
+            logging.error('Error extracting audio features.')
             return np.zeros(8)
 
     def __get_period(self, signal, signal_sr):

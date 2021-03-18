@@ -1,4 +1,4 @@
-FROM python:3.6.9
+FROM python:3.7.7
 
 ## App engine
 # Expose port you want your app on
@@ -40,4 +40,4 @@ COPY . $HOME/app
 WORKDIR $HOME/app
 
 # Run
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0", "--client.showErrorDetails=false"]

@@ -3,6 +3,7 @@
 # L. Haas, D. Soylu, J. Spencer
 #
 
+import logging
 import streamlit as st
 
 import src.Pages.NewUserPage as NewUserPage
@@ -24,50 +25,74 @@ def model_information():
   """
   Shows model results in detail.
   """
-  with st.beta_expander("Disclaimer & Algorithm Details"):
-    st.write("""
-    This site is used for testing purposes and any Covid-19 risk evaluations
-    can be inaccurate as of this moment. We do not take any responsibility
-    for the predictions made by this application.
+  with st.beta_expander('Algorithm Details & Accuracy'):
+
+    st.subheader('How Does Our Algorithm Work?')
+    st.markdown("""
+    Our algorithm is a [Gradient Boosting Tree Classifier](https://en.wikipedia.org/wiki/Gradient_boosting) which leverages
+    cough audio recordings and user-provided clinical features to predict one out of three classes: *healthy*, *symptomatic*, 
+    and *Covid-19*:
+
+    * **Healthy**:  \n
+      The person most likely does not have Covid-19.
+    * **Symptomatic**:  \n
+      The person likely does not have Covid-19, however the provided audio and clinical information correlates with real world 
+      examples of symptomatic users who did not test positive in a PCR test setting.
+    * **Covid-19**:  \n
+      The person most likely has Covid-19.
     """)
 
+    st.subheader('How Are Covid-19 Risk Evaluations Generated?')
     st.markdown("""
     Our model uses three categories of features to provide a prediction to our user on whether their cough sample may be 
-    associated with Covid-19 including: embedding-based features, audio features, and demographic/symptom information.\
+    associated with Covid-19, including: embedding-based features, audio features, and demographic/symptom information.  \n
+    * **Embedding-Based Features**:  \n
+      When a user submits a cough, our model performs [VGGish embeddings](https://research.google/pubs/pub45611/) on the 
+      audio data in the cloud. Through our research, we recognized different patterns in a healthy person's audio embeddings 
+      vs a Covid-positive individual's audio embedding. Therefore, we use the provided audio sample embeddings as a feature 
+      to help our model gauge the risk factor that the user has Covid-19.  \n
 
-    * *Embedding-Based Features*:
-      * When a user submits a cough, our model performs VGGish embeddings on the audio data in the cloud.
-       Through our research, we recognized different patterns in a healthy person's audio embeddings vs a Covid-positive 
-       individual's audio embedding. Therefore, we use the provided audio sample embeddings as a feature to help our model 
-       gauge the risk factor that the user has Covid-19.\
-
-    * *Audio Features:*
-      * When a user submits a cough, our model calculates various measurements that help capture what the medical community 
+    * **Audio Features**:  \n
+      When a user submits a cough, our model calculates various measurements that help capture what the medical community 
       has identified as a 'dry cough' associated with Covid infection. Specifically we look at the max signal (loudest point), 
-      median signal (average loudness), and spectral bandwidth (the duration of the cough in comparision to its peak). We 
-      use these metrics as features in our model.\
+      median signal (median loudness), spectral bandwidth (the standard deviation of the cough audio frequencies over time), and
+      many more. We use these metrics as features in our model.  \n
 
-    * *Demographic/Symptom Information:*
-      * Lastly, our app uses clinically relevant background information provided by the user to help contribute to its 
-      prediction. These features are the patient's age, respiratory condition and fever/muscle pain status.\
+    * **Demographic/Symptom Information**:  \n
+      Lastly, our app uses clinically relevant background information provided by the user to help contribute to its 
+      prediction. These features are the patient's age, her history of respiratory conditions and current fever/muscle pain 
+      status.  \n
     """
-                  )
-    st.write("""\n
-            It is important to recognize the limitations of our model, in its current iteration we are achieving the following
-            accuracy results:
-            """)
+    )
+
+    st.subheader('How Accurate Is Our Covid-19 Risk Evaluation?')
+    st.write("""
+    It is important to recognize the limitations of our model, in its current iteration we are achieving a 
+    [ROC-AUC Score](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) of 71%, with the following accuracy
+    breakdown:
+    """)
 
     image = Image.open(ROC_IMAGE_URL)
-    st.image(image=image, width=400)
+    st.image(image=image, width=500)
 
     st.write("""\n
-          Currently our model is trained on an 2X augmented training set of 5,031 examples (1,677 examples)
-          per class and evaluated on a 2X augmented test set of 420 examples. Displayed below is the confusion
-          matrix of our model on real world test examples.
-      """)
+    Currently our model is trained on an 2x augmented training set of 5,031 examples (1,677 per class)
+    and evaluated on a balanced non-augmented test set of 420 examples (140 per class).  \n
+    Displayed below is the confusion matrix our model achieved on the validation dataset.
+    """)
 
     image = Image.open(CONFUSION_IMAGE_URL)
-    st.image(image=image, width=400)
+    st.image(image=image, width=500)
+
+def disclaimer_section():
+  """
+  Render a disclaimer section
+  """
+  st.subheader('Disclaimer')
+  st.warning("""
+  This site is used for testing purposes and any Covid-19 risk evaluations
+  can be inaccurate as of this moment. We do not take any responsibility
+  for the predictions of this application.""")
 
 def information_section(session_state):
   """
@@ -80,13 +105,16 @@ def information_section(session_state):
 
   with st.beta_expander("Data Privacy Policy"):
     st.write("""
-    Your cough recording will exclusively be used in order to serve you
-    a Covid-19 risk evaluation. Under no circumstances will we share
+    Your cough recordings will exclusively be used in order to serve you
+    Covid-19 risk evaluations. Under no circumstances will we share
     your data with any third parties. In addition, your Covid-19 risk
     evaluation will be generated entirely anonymously.
     """)
 
 if __name__ == '__main__':
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO) 
+
   setup_page()
   session_state = SessionState.get(recording_hash=None,
                                    cough_donated=False,
@@ -121,4 +149,5 @@ if __name__ == '__main__':
   elif returning_option == returning_user_prompt:
     ReturningUserPage.app(session_state)
 
+  disclaimer_section()
   information_section(session_state)
