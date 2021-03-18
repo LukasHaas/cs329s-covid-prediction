@@ -24,7 +24,7 @@ import sounddevice as sd
 import soundfile as sf
 
 # Initialization
-#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'gcp-service-account.json'
 
 # Project Constants
 PROJECT = 'cs329s-covid-caugh-prediction'
@@ -331,7 +331,7 @@ def app(session_state):
 
         # Get recording and display audio bar
         rec = json.loads(recording)
-        x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
+        # x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
         rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
         cough_conf = detect_cough(audio, rate)
         review_recording(rec['url'], cough_conf, rate, audio)
@@ -360,6 +360,6 @@ def app(session_state):
         # Get risk evaluation
         risk_evaluation(session_state, recording, audio, rate, extra_information)
         if session_state.successful_prediction:
-            prediction_explanation(session_state, x, fs)
+            # prediction_explanation(session_state, x, fs)
             consent(session_state, recording)
             pcr_test_phrase(session_state)
