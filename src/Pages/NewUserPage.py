@@ -4,6 +4,7 @@ import time
 import json
 import uuid
 import requests
+import logging
 import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -83,7 +84,7 @@ def predict_covid(recording, sr, clinical_features):
         sr (int): cough's sample rate
     """
     pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
-    print('Covid Predictions:', pred_conf)
+    logging.info('Covid Predictions:', pred_conf.tolist())
     return np.argmax(pred_conf)
 
 def review_recording(recording_url, cough_conf, rate, audio):
@@ -100,7 +101,7 @@ def review_recording(recording_url, cough_conf, rate, audio):
     # Check if cough was detected
     if cough_conf < 0.20:
         st.error('We did not detect a cough in your recording. Please try again.')
-    elif cough_conf < 0.55:
+    elif cough_conf < 0.50:
         st.warning('If possible, please cough more forcefully. Otherwise, proceed.')
     else:
         st.success('Cough sucessfully recorded.')
@@ -166,7 +167,6 @@ def check_for_new_recording(recording, session_state):
       session_state (SessionState): session state
     """
     if session_state.recording_hash != hash(recording):
-        print('New recording recorded.')
         # session_state.cough_donated = False
         session_state.cough_uuid = str(uuid.uuid4())
         session_state.recording_hash = hash(recording)
@@ -211,14 +211,25 @@ def pcr_test_phrase(session_state):
                         st.error('An error occured setting your phrase. Please try again.')
 
 def inject_segmented_spectrogram(x, fs):
-    cough_segments, cough_mask = Utils.segment_cough(x, fs)
-    cough_mask = cough_mask * np.amax(x)
+    """Inserts a cough-segmented spectrogram.
+
+    Args:
+        signal (np.array): audio as a 1-D numpy array
+        fs (int): sample rate
+    """
+    max_signal = np.max(np.abs(x))
+    trimmed_audio = Utils.normalize_audio(x, fs, shouldTrim=False)
+    cough_segments, cough_mask = Utils.segment_cough(trimmed_audio, fs)
+    
+    if np.max(cough_mask) == 0:
+        st.error('We did not detect strong coughs to segment.')
+
+    cough_mask = cough_mask * max_signal
     seg_fig = plt.figure(figsize=(10, 3))
     ax = seg_fig.add_subplot(1, 1, 1)
     ax.plot(x)
     ax.plot(cough_mask)
     st.pyplot(seg_fig)
-
 
 def detail_recording(x, fs):
     """
@@ -228,18 +239,22 @@ def detail_recording(x, fs):
     recording_url (str): url to audio blob file
     cough_conf (float): cough detection model confidence
     """
-
-    st.write('In order to create features for our model, we look at the cough segments recognized in your audio, as'
-             ' displayed below.')
+    st.write('In order to create features for our model, we look at the cough segments recognized in your audio, as \
+              displayed below.')
     # Display audio
     inject_segmented_spectrogram(x, fs)
-    st.write('An important step we take before analyzing your audio is applying a Fourier transformation which '
-             'in simple terms displays the frequencies that are present in your signal and in what proportions.'
-             'Displayed below is what your audio looks like after this transformation.')
+    st.write('An important step we take before analyzing your audio is applying a Fourier transformation which \
+              in simple terms displays the frequencies that are present in your cough in a logarithmic scale.\
+              Displayed below is what your audio looks like after this transformation.')
     inject_mel_spectrogram(x, fs)
 
-
 def inject_mel_spectrogram(x, fs):
+    """Displays a mel-spectrogram.
+
+    Args:
+        x (np.array): audio input as 1-D numpy array
+        fs (int): sample rate
+    """
     S = librosa.feature.melspectrogram(y=x, sr=fs)
     mel_fig, ax = plt.subplots()
     S_dB = librosa.power_to_db(S, ref=np.max)
@@ -328,12 +343,20 @@ def app(session_state):
     recording = CovidRecordButton(duration=5000)
 
     if recording and recording is not None:
-
         # Get recording and display audio bar
         rec = json.loads(recording)
         # x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
         rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
-        cough_conf = detect_cough(audio, rate)
+        
+        try:
+            cough_conf = detect_cough(audio, rate)
+            logging.info('Successfully recorded cough.')
+
+        except ValueError:
+            cough_conf = 0.0
+            logging.error('Error recording cough.')
+            st.error('An error occured recording your cough. Please try again using a different input device.')
+            
         review_recording(rec['url'], cough_conf, rate, audio)
 
         # Check if new recording was submitted and adjust session state.
@@ -342,10 +365,10 @@ def app(session_state):
         # Share extra information
         st.subheader('Share Extra Information')
         st.write("""
-    Our models work better if you share some extra information about yourself
-    and your symptoms, although doing so isn\'t required for prediction. Please
-    answer the following short questions.
-    """)
+        Our models work better if you share some extra information about yourself
+        and your symptoms, although doing so isn\'t required for prediction. Please
+        answer the following short questions.
+        """)
         respiratory_condition = st.selectbox('Do you have a history of respiratory issues (e.g. asthma)?', BINARY_ANSWERS)
         col1, col2 = st.beta_columns(2)
         fever = col1.selectbox('Do you have a fever?', BINARY_ANSWERS)

@@ -1,4 +1,4 @@
-streamlit==0.76.0
+streamlit==0.79.0
 SoundFile==0.10.3.post1
 sounddevice==0.4.1
 scipy==1.5.4

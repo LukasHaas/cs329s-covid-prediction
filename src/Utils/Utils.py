@@ -1,11 +1,11 @@
+import librosa
 import sounddevice as sd
 import googleapiclient.discovery
 from google.api_core.client_options import ClientOptions
 from google.cloud import storage
 import numpy as np
 
-
-def segment_cough(x, fs, cough_padding=0.2, min_cough_len=0.2, th_l_multiplier=0.1, th_h_multiplier=2):
+def segment_cough(x, fs, cough_padding=0.2, min_cough_len=0.1, th_l_multiplier=0.1, th_h_multiplier=0.5):
     """Preprocess the data by segmenting each file into individual coughs using a hysteresis comparator on the signal power
 
     Inputs:
@@ -61,6 +61,27 @@ def segment_cough(x, fs, cough_padding=0.2, min_cough_len=0.2, th_l_multiplier=0
 
     return coughSegments, cough_mask
 
+def normalize_audio(signal, fs, shouldTrim=True):
+    """Normalizes and trims the audio.
+
+    Args:
+        signal (np.array): audio as a 1-D numpy array
+        fs (int): sample rate
+
+    Returns:
+        (np.array): normalized and trimmed audio
+    """
+    frame_len = int(fs / 10)  # 100 ms
+    hop = int(frame_len / 2)  # 50% overlap, meaning 5ms hop length
+
+    # normalise the sound signal before processing
+    signal = signal / np.max(np.abs(signal))
+
+    # trim the signal to the appropriate length
+    if shouldTrim:
+        signal, _ = librosa.effects.trim(signal, frame_length=frame_len, hop_length=hop)
+
+    return signal
 
 def upload_blob(bucket_name, source_object, destination_blob_name):
     """
@@ -81,29 +102,3 @@ def upload_blob(bucket_name, source_object, destination_blob_name):
     blob.upload_from_string(source_object)
 
     print("File uploaded to {}.".format(destination_blob_name))
-
-
-def assess_device_samplerate():
-    """
-  Returns the device's default sampling rate and a string stating the sampling quality.
-
-  Returns:
-    default_samplerate (int): device's default samplerate
-    sample_string (str): string indicating microphone quality
-  """
-    default_samplerate = None  # default
-    try:
-        default_samplerate = int(sd.query_devices()[sd.default.device[0]]['default_samplerate'])
-    except (IndexError):
-        default_samplerate = 44100
-
-    sample_string = 'Your device\'s microphone quality: '
-
-    if default_samplerate <= 16000:
-        sample_string += ':pensive:'
-    elif default_samplerate <= 22100:
-        sample_string += ':neutral_face:'
-    else:
-        sample_string += ':grinning:'
-
-    return default_samplerate, sample_string

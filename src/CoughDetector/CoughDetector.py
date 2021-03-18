@@ -2,6 +2,7 @@
 
 import numpy as np
 import librosa
+import logging
 import xgboost
 from scipy import signal
 from scipy.io import wavfile
@@ -58,7 +59,7 @@ class CoughDetector:
             return np.array(feature_values_vec).reshape(1,-1)
 
         except:
-            "Feature extraction fails when the audio is completely silent"
+            logging.error('Error extracting cough detection audio features.')
             return 0
 
     def __preprocess_cough(self, x, fs, cutoff = 6000, normalize = True, filter_ = True, downsample = True):
