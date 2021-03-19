@@ -1,0 +1,20 @@
+on:
+  push:
+    branches: [ master ]
+jobs:
+  gcp_app_engine_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v1
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          version: '290.0.1'
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Set Up GCP Credentials
+        run: gcloud config set project ${{ secrets.GCP_PROJECT }}
+      - name: Upload Container to Google Cloud Platform
+        run: gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.GCP_RUN_SERVICE }}
+      - name: Deploy to Cloud Run
+        run: gcloud run deploy ${{ secrets.GCP_RUN_SERVICE }} --region ${{ secrets.GCP_REGION }} --image gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.GCP_RUN_SERVICE }} --update-env-vars GCP_PROJECT=${{ secrets.GCP_PROJECT }},GCP_REGION=${{ secrets.GCP_REGION }},GCP_COUGH_STORAGE=${{ secrets.GCP_COUGH_STORAGE }},GCP_MODEL=${{ secrets.GCP_MODEL }} --platform managed
