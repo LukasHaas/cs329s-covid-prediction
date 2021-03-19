@@ -33,7 +33,7 @@ if os.path.isfile(CREDENTIALS_FILE):
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 COVID_MODEL = 'MVP_XGBoost'
-COUGH_STORAGE_BUCKET = 'cs329s-covid-user-coughs'
+COUGH_STORAGE_BUCKET = 'cs329s-covid-caugh-prediction.appspot.com'
 
 # String Constants
 NOT_SELECTED = 'No selection'
@@ -277,7 +277,7 @@ def prediction_explanation(session_state, x, fs):
 
     # TODO John, extra personalized prediction info here.
 
-def consent(session_state, recording):
+def consent(session_state, recording, cough_conf):
     # Consent
     st.subheader('Contribute to Research')
     st.info("""
@@ -289,7 +289,7 @@ def consent(session_state, recording):
     consent_cough = st.checkbox('I agree to anonymously donate my cough and extra information provided for research purposes.')
     if consent_cough and not session_state.cough_donated:
         with st.spinner('Uploading information ...'):
-            Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
+            Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'user_cough_data/{session_state.cough_uuid}_conf_{cough_conf}.wav')
         st.success('Successfully uploaded!')
         session_state.cough_donated = True
         session_state.symptoms_donated = True
@@ -307,7 +307,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
 
     if request_prediction:
       with st.spinner('Requesting risk evaluation ...'):
-          Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
           try:
               covid_pred = predict_covid(audio, sr, extra_information)
               #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
@@ -386,5 +385,5 @@ def app(session_state):
         risk_evaluation(session_state, recording, audio, rate, extra_information)
         if session_state.successful_prediction:
             prediction_explanation(session_state, x, fs)
-            consent(session_state, recording)
+            consent(session_state, recording, cough_conf)
             pcr_test_phrase(session_state)
