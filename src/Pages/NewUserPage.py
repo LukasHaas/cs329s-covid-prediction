@@ -384,6 +384,6 @@ def app(session_state):
         # Get risk evaluation
         risk_evaluation(session_state, recording, audio, rate, extra_information)
         if session_state.successful_prediction:
-            #prediction_explanation(session_state, x, fs)
+            prediction_explanation(session_state, x, fs)
             consent(session_state, recording, cough_conf)
             pcr_test_phrase(session_state)
