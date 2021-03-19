@@ -2,7 +2,7 @@ on:
   push:
     branches: [ master ]
 jobs:
-  gcp_app_engine_job:
+  gcp_cloud_run_job:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
