@@ -13,6 +13,8 @@ Scan the QR code below or click the link to see the app in action:
 [Covid-19 Risk Evaluation App](https://cs329s-covid-caugh-prediction.appspot.com/)
 
 ## Project Setup
+
+### Dependencies
 It is recommended to first install all required dependencies using a virtual environment.
 
 Go to the project directory to which you have downloaded all of this repo's files and run:
@@ -30,6 +32,23 @@ source venv/bin/activate
 Next, you need to install all of the project's dependencies:
 ```shell
 pip install -r requirements.txt
+```
+
+### Environment Variables
+In order not to expose GCP information to the public, you will need to set some environment variables.
+
+Please create a file called `app_environment.sh` in the project directory and add the following lines to it,
+replacing the right side of the equal signs with your GCP project details:
+```shell
+export GCP_PROJECT=your_project
+export GCP_REGION=your_region
+export GCP_COUGH_STORAGE=your_storage
+export GCP_MODEL=your_model
+```
+
+Next run the shell file using source in order to set the environment variables:
+```shell
+source ./app_environment.sh
 ```
 
 ## Running the Application

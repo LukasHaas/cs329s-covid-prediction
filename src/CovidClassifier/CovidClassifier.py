@@ -9,8 +9,6 @@ from scipy.fftpack import fft, hilbert
 from sklearn.ensemble import GradientBoostingClassifier
 from .gcp_inference import get_vggish_embedding
 
-GCP_PROJECT = 'cs329s-covid-caugh-prediction'
-GCP_MODEL = 'vggish'
 MEAN_VGGISH_EMBEDDING = 0.63299006
 VGGISH_EMBEDDING_INDEX = 33
 
@@ -67,7 +65,7 @@ class CovidClassifier:
         try:
             resampled_audio = librosa.resample(audio, fs, 16000, res_type='kaiser_best')
             cut_audio = resampled_audio.tolist()[-int(4.2*16000):]
-            embeddings = get_vggish_embedding(GCP_PROJECT, GCP_MODEL, cut_audio)[0]['output_0']
+            embeddings = get_vggish_embedding(os.environ['GCP_PROJECT'], os.environ['GCP_MODEL'], cut_audio)[0]['output_0']
             return np.mean(embeddings, axis=0)[VGGISH_EMBEDDING_INDEX]
         except:
             logging.warning('Could not obtain VGGish embeddings. Check if AI Platform endpoint is enabled and credentials are set.')

@@ -31,10 +31,9 @@ if os.path.isfile(CREDENTIALS_FILE):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = CREDENTIALS_FILE
 
 # Project Constants
-PROJECT = 'cs329s-covid-caugh-prediction'
-REGION = 'us-central1'
-COVID_MODEL = 'MVP_XGBoost'
-COUGH_STORAGE_BUCKET = 'cs329s-covid-caugh-prediction.appspot.com'
+PROJECT = os.environ['GCP_PROJECT']
+REGION = os.environ['GCP_REGION']
+COUGH_STORAGE_BUCKET = os.environ['GCP_COUGH_STORAGE']
 
 # String Constants
 NOT_SELECTED = 'No selection'
@@ -316,7 +315,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
       with st.spinner('Requesting risk evaluation ...'):
           try:
               covid_pred = predict_covid(audio, sr, extra_information)
-              #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
               if covid_pred == 2:
                   st.error('Based off your cough sample and background information we do believe you are at risk for having Covid.')
               elif covid_pred == 1:

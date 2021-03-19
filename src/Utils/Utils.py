@@ -1,3 +1,4 @@
+import logging
 import librosa
 import sounddevice as sd
 import googleapiclient.discovery
@@ -100,5 +101,4 @@ def upload_blob(bucket_name, source_object, destination_blob_name):
     blob = bucket.blob(destination_blob_name)
 
     blob.upload_from_string(source_object)
-
-    print("File uploaded to {}.".format(destination_blob_name))
+    logging.info('File uploaded.', destination_blob_name)

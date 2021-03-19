@@ -21,8 +21,8 @@ __pycache__/
 .*/
 
 venv/
-venv37/
 *.wav
 *.DS_Store
 *.json
 *.pyc
+*.sh
