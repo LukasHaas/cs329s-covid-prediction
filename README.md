@@ -44,13 +44,21 @@ Cough sounds will not be saved to any device but are processed using GCP APIs.
 ## Deployment
 In order to deploy the application to Google Cloud's App Engine, run the following command from the root directory of the project:
 ```shell
-make gcloud-deploy
+make gcloud-deploy-flex
 ```
+This will create a new app version in a "flexible" GCP App Engine environment.
 
 ## System Architecture
 ### MVP
-The below diagram illustrates our MVP system architecture on Google Cloud Platform:
+The below diagram illustrates how our system on looked like on Google Cloud Platform when we submitted it for MVP evaluation:
 
 <img src="MVPSystemDiagram.png"
-     alt="Covid-19 Evaluation App - QR Code"
+     alt="Covid-19 Evaluation App - MVP System Diagram"
+     style="margin: 10px" />
+     
+### V1: CS329 Demo 
+Since our MVP, we added a lot of features. The below diagram illustrates our current system architecture on Google Cloud Platform:
+
+<img src="DemoSystemDiagram.png"
+     alt="Covid-19 Evaluation App - V1 System Diagram"
      style="margin: 10px" />
