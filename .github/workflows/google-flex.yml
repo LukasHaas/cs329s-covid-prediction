@@ -1,0 +1,18 @@
+on:
+  push:
+    branches: [ master ]
+jobs:
+  gcp_app_engine_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v1
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          version: '290.0.1'
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+      - run: gcloud config set project ${{ secrets.GCP_PROJECT }}
+      - name: Deploy to App Engine
+        id: deploy-app
+        run: make gcloud-deploy-flex

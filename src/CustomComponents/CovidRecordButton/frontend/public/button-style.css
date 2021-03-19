@@ -1,0 +1,21 @@
+.covid-button {
+  display: inline-flex;
+  -webkit-box-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  justify-content: center;
+  font-weight: 400;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  margin: 0px;
+  line-height: 1.6;
+  color: inherit;
+  width: auto;
+  background-color: rgb(255, 255, 255);
+  border: 1px solid rgb(230, 234, 241);
+}
+
+.covid-button:hover {
+  border-color: rgb(246, 51, 102);
+  color: rgb(246, 51, 102);
+}
