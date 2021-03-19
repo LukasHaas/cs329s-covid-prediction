@@ -40,4 +40,4 @@ COPY . $HOME/app
 WORKDIR $HOME/app
 
 # Run
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=$PORT", "--server.address=0.0.0.0", "--client.showErrorDetails=false", "--server.enableCORS=false"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0", "--client.showErrorDetails=false", "--server.enableCORS=false"]
