@@ -4,11 +4,13 @@
 This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
 
 ## Demo
-Scan the QR code below to see the app in action:
+Scan the QR code below or click the link to see the app in action:
 
 <img src="QRCode.jpg"
      alt="Covid-19 Evaluation App - QR Code"
      width="180px"/>
+     
+[Covid-19 Risk Evaluation App](https://cs329s-covid-caugh-prediction.appspot.com/)
 
 ## Project Setup
 It is recommended to first install all required dependencies using a virtual environment.
