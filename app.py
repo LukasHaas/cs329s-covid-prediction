@@ -73,7 +73,7 @@ def model_information():
     """)
 
     image = Image.open(ROC_IMAGE_URL)
-    st.image(image=image, width=500)
+    st.image(image=image, use_column_width='auto')
 
     st.write("""\n
     Currently our model is trained on an 2x augmented training set of 5,031 examples (1,677 per class)
@@ -82,7 +82,7 @@ def model_information():
     """)
 
     image = Image.open(CONFUSION_IMAGE_URL)
-    st.image(image=image, width=500)
+    st.image(image=image, use_column_width='auto')
 
 def disclaimer_section():
   """
@@ -137,10 +137,10 @@ if __name__ == '__main__':
     "Returning": ReturningUserPage
   }
 
-  new_user_prompt = 'new user and I would like to get a COVID-19 risk evaluation'
-  returning_user_prompt = 'returning user and I would like to submit the result of my PCR test'
+  new_user_prompt = '... new user (COVID-19 risk evaluation)'
+  returning_user_prompt = '... returning user (submit PCR test)'
 
-  returning_option = st.selectbox('I am a',
+  returning_option = st.selectbox('I am a ...',
     ('', new_user_prompt, returning_user_prompt)
   )
 
