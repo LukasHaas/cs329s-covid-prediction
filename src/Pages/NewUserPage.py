@@ -329,9 +329,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
               st.error('An error occured requesting your Covid-19 risk evaluation.')
 
 def get_boolean_value(value):
-    """
-    #TODO
-    """
     if value == YES_ANSWER:
         return True
     elif value == NO_ANSWER:
@@ -341,9 +338,6 @@ def get_boolean_value(value):
 
 
 def app(session_state):
-    # default_samplerate, sample_string = Utils.assess_device_samplerate()
-    # st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
-
     st.subheader('Record a 5 Second Cough Sample')
     st.write('Please minimize any background noise.')
 
