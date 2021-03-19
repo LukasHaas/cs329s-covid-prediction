@@ -80,7 +80,7 @@ def detect_cough(recording, sr):
     """
     features = COUGH_DETECTOR.extract_features(recording, sr)
     pred_conf = COUGH_DETECTOR.classify_cough(features)[0]
-    logging.info('Cough Detection Prediction:', pred_conf)
+    logging.info(f'Cough Detection Prediction: {pred_conf}')
     return pred_conf
 
 @st.cache(show_spinner=False)
@@ -92,7 +92,7 @@ def predict_covid(recording, sr, clinical_features):
         sr (int): cough's sample rate
     """
     pred_conf = COVID_CLASSIFIER.classify_cough(recording, sr, clinical_features)
-    logging.info('Covid Predictions:', pred_conf.tolist())
+    logging.info(f'Covid Predictions: {pred_conf.tolist()})
     return np.argmax(pred_conf)
 
 def review_recording(recording_url, cough_conf, rate, audio):
@@ -329,9 +329,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
               st.error('An error occured requesting your Covid-19 risk evaluation.')
 
 def get_boolean_value(value):
-    """
-    #TODO
-    """
     if value == YES_ANSWER:
         return True
     elif value == NO_ANSWER:
@@ -341,9 +338,6 @@ def get_boolean_value(value):
 
 
 def app(session_state):
-    # default_samplerate, sample_string = Utils.assess_device_samplerate()
-    # st.info(f'{sample_string}') #A reasonable recording quality is important to get the most accurate results.\n\n
-
     st.subheader('Record a 5 Second Cough Sample')
     st.write('Please minimize any background noise.')
 
@@ -353,7 +347,8 @@ def app(session_state):
     if recording and recording is not None:
         # Get recording and display audio bar
         rec = json.loads(recording)
-        # x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
+        x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
+        logging.info(f'Audio recorded: {x[:10]}')
         rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
         
         try:
