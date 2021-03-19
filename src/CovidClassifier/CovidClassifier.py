@@ -70,8 +70,7 @@ class CovidClassifier:
             embeddings = get_vggish_embedding(GCP_PROJECT, GCP_MODEL, cut_audio)[0]['output_0']
             return np.mean(embeddings, axis=0)[VGGISH_EMBEDDING_INDEX]
         except:
-            logging.warning('Could not obtain VGGish embeddings. Check if AI Platform endpoint is enabled \
-            and credentials are set.')
+            logging.warning('Could not obtain VGGish embeddings. Check if AI Platform endpoint is enabled and credentials are set.')
             return np.array([MEAN_VGGISH_EMBEDDING])
 
     def __extract_audio_features(self, signal, fs):
