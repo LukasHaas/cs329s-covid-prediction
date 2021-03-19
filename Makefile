@@ -1,4 +1,4 @@
-.PHONY: run run-container gcloud-deploy-standard
+.PHONY: run run-container gcloud-deploy-flex
 
 APP_NAME ?= covid-risk-evaluation
 
