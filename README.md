@@ -5,13 +5,32 @@
 This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
 
 ## Demo
+
+### Current Deployment - Cloud Run
+
+We currently have the app deployed on GCP Cloud Run. For the older deployment version (which is not reliable), please see the
+App Engine deployment.
+
 Scan the QR code below or click the link to see the app in action:
 
 <img src="QRCode.jpg"
      alt="Covid-19 Evaluation App - QR Code"
      width="180px"/>
      
-[Covid-19 Risk Evaluation App](https://cs329s-covid-caugh-prediction.appspot.com/)
+[Covid-19 Risk Evaluation App - Cloud Run](https://covid-risk-evaluation-fynom42syq-uc.a.run.app/)
+
+### Old Deployment - App Engine
+
+The below is the old deployment of our app which will soon be removed:
+
+Scan the QR code below or click the link to see the app in action:
+
+<img src="QRCode_App_Engine.jpg"
+     alt="Covid-19 Evaluation App - QR Code App Engine"
+     width="180px"/>
+     
+[Covid-19 Risk Evaluation App - App Engine](https://cs329s-covid-caugh-prediction.appspot.com/)
+
 
 ## Project Setup
 
