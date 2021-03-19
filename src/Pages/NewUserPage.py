@@ -353,7 +353,7 @@ def app(session_state):
     if recording and recording is not None:
         # Get recording and display audio bar
         rec = json.loads(recording)
-        x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
+        # x, fs = librosa.load(io.BytesIO(bytes(rec['data'])))
         rate, audio = wavfile.read(io.BytesIO(bytes(rec['data'])))
         
         try:

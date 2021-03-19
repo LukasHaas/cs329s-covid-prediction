@@ -15,4 +15,4 @@ jobs:
       - run: gcloud config set project ${{ secrets.GCP_PROJECT }}
       - name: Deploy to App Engine
         id: deploy-app
-        run: make gcloud-deploy-standard
+        run: make gcloud-deploy-flex
