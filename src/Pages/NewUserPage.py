@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import RendererAgg
 import streamlit.components.v1 as components
 import librosa
 import librosa.display
@@ -33,7 +34,7 @@ if os.path.isfile(CREDENTIALS_FILE):
 PROJECT = 'cs329s-covid-caugh-prediction'
 REGION = 'us-central1'
 COVID_MODEL = 'MVP_XGBoost'
-COUGH_STORAGE_BUCKET = 'cs329s-covid-user-coughs'
+COUGH_STORAGE_BUCKET = 'cs329s-covid-caugh-prediction.appspot.com'
 
 # String Constants
 NOT_SELECTED = 'No selection'
@@ -58,8 +59,12 @@ SYMPTOMS = [
     'a rash on skin, or discolouration of fingers or toes'
 ]
 
+# Classifiers
 COUGH_DETECTOR = CoughDetector()
 COVID_CLASSIFIER = CovidClassifier()
+
+# Prevent Matplotlib Bug
+_lock = RendererAgg.lock
 
 
 @st.cache(show_spinner=False)
@@ -74,7 +79,8 @@ def detect_cough(recording, sr):
       pred_conf (float): predicted confidence of cough existence.
     """
     features = COUGH_DETECTOR.extract_features(recording, sr)
-    pred_conf = COUGH_DETECTOR.classify_cough(features)
+    pred_conf = COUGH_DETECTOR.classify_cough(features)[0]
+    logging.info('Cough Detection Prediction:', pred_conf)
     return pred_conf
 
 @st.cache(show_spinner=False)
@@ -145,19 +151,15 @@ def inject_audio_spectogram(rate, audio):
       rate (int): frequency of the audio.
       audio (): audio recording.
     """
-    audio_downscaled = audio / (2. ** 15)
-    sample_points = float(audio_downscaled.shape[0])
-    sound_duration = audio_downscaled.shape[0] / rate
-    time_array = np.arange(0, sample_points, 1)
-    time_array = time_array / rate
-    time_array = time_array * 1000
+    x_values = np.arange(len(audio)) / rate
 
-    fig = plt.figure(figsize=(10, 3))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(time_array, audio_downscaled)
-    ax.set_xlabel("Time (ms) ")
-    ax.set_ylabel("Amplitude")
-    st.write(fig)
+    with _lock:
+        fig = plt.figure(figsize=(10, 3))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(x_values, audio)
+        ax.set_xlabel("Time (s) ")
+        ax.set_ylabel("Amplitude")
+        st.pyplot(fig)
 
 
 def check_for_new_recording(recording, session_state):
@@ -220,18 +222,23 @@ def inject_segmented_spectrogram(x, fs):
         fs (int): sample rate
     """
     max_signal = np.max(np.abs(x))
-    trimmed_audio = Utils.normalize_audio(x, fs, shouldTrim=False)
-    cough_segments, cough_mask = Utils.segment_cough(trimmed_audio, fs)
+    normalized_audio = Utils.normalize_audio(x, fs, shouldTrim=False)
+    cough_segments, cough_mask = Utils.segment_cough(normalized_audio, fs)
     
     if np.max(cough_mask) == 0:
         st.error('We did not detect strong coughs to segment.')
 
     cough_mask = cough_mask * max_signal
-    seg_fig = plt.figure(figsize=(10, 3))
-    ax = seg_fig.add_subplot(1, 1, 1)
-    ax.plot(x)
-    ax.plot(cough_mask)
-    st.pyplot(seg_fig)
+    x_values = np.arange(len(normalized_audio)) / fs
+
+    with _lock:
+        seg_fig = plt.figure(figsize=(10, 3))
+        ax = seg_fig.add_subplot(1, 1, 1)
+        ax.plot(x_values, x)
+        ax.plot(x_values, cough_mask)
+        ax.set_xlabel("Time (s) ")
+        ax.set_ylabel("Amplitude")
+        st.pyplot(seg_fig)
 
 def detail_recording(x, fs):
     """
@@ -258,26 +265,28 @@ def inject_mel_spectrogram(x, fs):
         fs (int): sample rate
     """
     S = librosa.feature.melspectrogram(y=x, sr=fs)
-    mel_fig, ax = plt.subplots()
-    S_dB = librosa.power_to_db(S, ref=np.max)
-    img = librosa.display.specshow(S_dB, x_axis='time',
-                                 y_axis='mel', sr=fs)
-    mel_fig.colorbar(img, ax=ax, format='%+2.0f dB')
-    ax.set(title='Mel-frequency spectrogram')
-    st.pyplot(mel_fig)
+
+    with _lock:
+        mel_fig, ax = plt.subplots()
+        S_dB = librosa.power_to_db(S, ref=np.max)
+        img = librosa.display.specshow(S_dB, x_axis='time',
+                                    y_axis='mel', sr=fs)
+        mel_fig.colorbar(img, ax=ax, format='%+2.0f dB')
+        ax.set(title='Mel-frequency spectrogram')
+        st.pyplot(mel_fig)
 
 def prediction_explanation(session_state, x, fs):
     st.subheader('Learn more about your prediction')
-    st.write('We make our predictions using a model that combines both the cough recording'
-             'and the extra information you have provided. Click below to learn how our model is deriving your '
-             'risk factor')
+    st.write('We make our predictions using a model that combines both the cough recording \
+              and the extra information you have provided. Click below to learn how our model is deriving your \
+              risk factor.')
     learn_more = st.button('Learn more')
     if learn_more:
         detail_recording(x, fs)
 
     # TODO John, extra personalized prediction info here.
 
-def consent(session_state, recording):
+def consent(session_state, recording, cough_conf):
     # Consent
     st.subheader('Contribute to Research')
     st.info("""
@@ -288,17 +297,15 @@ def consent(session_state, recording):
 
     consent_cough = st.checkbox('I agree to anonymously donate my cough and extra information provided for research purposes.')
     if consent_cough and not session_state.cough_donated:
-        with st.spinner('Uploading information ...'):
-            Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'perm_data/{session_state.cough_uuid}.wav')
+        if cough_conf > 0.5:
+            with st.spinner('Uploading information ...'):
+                Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'user_cough_data/{session_state.cough_uuid}.wav')
         st.success('Successfully uploaded!')
         session_state.cough_donated = True
         session_state.symptoms_donated = True
     # TODO: Implement revoking consent
 
 def risk_evaluation(session_state, recording, audio, sr, extra_information):
-    """
-    #TODO
-    """
     # Get Covid-19 Risk Evaluation
     st.subheader('Covid-19 Risk Evaluation')
     st.write(
@@ -307,7 +314,6 @@ def risk_evaluation(session_state, recording, audio, sr, extra_information):
 
     if request_prediction:
       with st.spinner('Requesting risk evaluation ...'):
-          Utils.upload_blob(COUGH_STORAGE_BUCKET, recording, f'temp_data/{session_state.cough_uuid}.wav')
           try:
               covid_pred = predict_covid(audio, sr, extra_information)
               #covid_pred = Utils.get_inference(PROJECT, COVID_MODEL, cough_features.tolist())[0] # MVP inference
@@ -385,6 +391,6 @@ def app(session_state):
         # Get risk evaluation
         risk_evaluation(session_state, recording, audio, rate, extra_information)
         if session_state.successful_prediction:
-            # prediction_explanation(session_state, x, fs)
-            consent(session_state, recording)
+            prediction_explanation(session_state, x, fs)
+            consent(session_state, recording, cough_conf)
             pcr_test_phrase(session_state)
