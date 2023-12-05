@@ -2,7 +2,7 @@
 [![.github/workflows/google-flex.yml](https://github.com/LukasHaas/cs329s-covid-prediction/actions/workflows/google-flex.yml/badge.svg)](https://github.com/LukasHaas/cs329s-covid-prediction/actions/workflows/google-flex.yml)
 
 # <img src="./assets/covid.png" alt="Covid-19 Evaluation App - QR Code" height="30px" width="30px" /> Covid-19 Prediction App
-This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds.
+This app is a Streamlit front end predicting the risk of Covid-19 based on recorded cough sounds. NOTE: This app is purely a proof of concept with no guarantees or warranties and results should not be relied on in any medical setting.
 
 ## Demo
 
